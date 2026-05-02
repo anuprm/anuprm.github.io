@@ -13614,282 +13614,485 @@ svc_backup   : Backup@123`
       }
     ]
   },
-  {
-    id: "asm-definitive-guide",
-    category: "ATTACK SURFACE",
-    categoryColor: "oklch(0.72 0.14 200)",
-    categoryBg: "oklch(0.72 0.14 200 / 0.1)",
-    categoryBorder: "oklch(0.72 0.14 200 / 0.3)",
-    title: "The Definitive Guide to Attack Surface Management",
-    excerpt: "Your attack surface is expanding faster than your security team can track. This deep dive covers the evolution of ASM, the critical difference between asset inventory and attack surface, and how to build a continuous discovery engine that actually reduces risk instead of just creating noise.",
-    date: "Jan 2025",
-    readTime: "22 min read",
-    author: "Security Research Team",
-    tags: ["ASM", "Asset Discovery", "Risk Reduction", "DevSecOps"],
+	{
+    id: "attack-surface-management",
+    category: "GUIDE",
+    categoryColor: "oklch(0.78 0.16 58)",
+    categoryBg: "oklch(0.78 0.16 58 / 0.12)",
+    categoryBorder: "oklch(0.78 0.16 58 / 0.30)",
+    title: "Attack Surface Management (ASM): Build a Continuous View of Exposure—and Reduce It",
+    excerpt:
+      "Attack Surface Management (ASM) is the practice of discovering, understanding, and reducing your organization’s exposure over time. This guide explains what ASM actually means in day-to-day operations, how to design an ASM lifecycle, and which metrics prove it’s working.",
+    date: "May 2026",
+    readTime: "18 min read",
     sections: [
       {
-        title: "The Invisible Perimeter",
+        heading: "Why “attack surface” is more than a security buzzword",
         paragraphs: [
-          "Remember when securing the network meant locking down the firewall and patching the servers in the rack down the hall? Those days are gone. Today, your attack surface is a sprawling, dynamic entity that lives in cloud buckets, SaaS configurations, developer shadow IT, forgotten subdomains, and third-party APIs. It shifts every time a developer pushes code, spins up a container, or integrates a new service.",
-          "Attack Surface Management (ASM) isn't just a buzzword; it's a fundamental shift in how we perceive risk. Traditional asset management asks, 'What do we own?' ASM asks the attacker's question: 'What can I touch, exploit, or leverage to get in?' This perspective shift is critical. You might have a perfectly documented CMDB, but if it doesn't include that rogue S3 bucket an intern created three years ago, your asset management is failing your security posture."
-        ],
-        image: {
-          src: "/images/asm/attack-surface-evolution.png",
-          alt: "Diagram showing the evolution from traditional network perimeter to modern distributed attack surface including cloud, SaaS, and IoT",
-          caption: "Figure 1: The modern attack surface extends far beyond the traditional network perimeter, encompassing cloud assets, SaaS apps, and shadow IT."
-        }
-      },
-      {
-        title: "ASM vs. Asset Management: Knowing the Difference",
-        paragraphs: [
-          "One of the most common pitfalls in security programs is conflating ASM with IT Asset Management (ITAM). While they overlap, their goals are distinct. ITAM is internally focused, driven by procurement, licensing, and lifecycle management. It relies on agents, CMDBs, and manual updates. It's authoritative but often slow and blind to unauthorized assets.",
-          "ASM, on the other hand, is externally focused and continuous. It uses the same techniques attackers use: passive DNS enumeration, certificate transparency logs, port scanning, and API discovery. ASM finds what ITAM misses. A robust security program needs both: ITAM to manage the lifecycle of known assets, and ASM to continuously validate that nothing has slipped through the cracks."
-        ],
-        list: {
-          title: "Key Differences at a Glance",
-          items: [
-            { label: "Perspective", value: "ITAM is internal/owner view; ASM is external/attacker view." },
-            { label: "Discovery", value: "ITAM uses agents and manual entry; ASM uses active/passive reconnaissance." },
-            { label: "Scope", value: "ITAM tracks authorized assets; ASM finds authorized, unauthorized, and rogue assets." },
-            { label: "Velocity", value: "ITAM updates periodically; ASM operates continuously in near real-time." }
-          ]
-        }
-      },
-      {
-        title: "The Four Pillars of Effective ASM",
-        paragraphs: [
-          "Implementing ASM isn't just about buying a tool and watching a dashboard. It requires a structured approach built on four core pillars. Without these, you'll end up with a list of assets and no actionable path to risk reduction."
-        ],
-        subsections: [
-          {
-            heading: "1. Discovery & Inventory",
-            content: "Discovery must be continuous and multi-faceted. Relying on a single data source creates blind spots. Effective discovery combines global scanning, cloud connector integrations (AWS, Azure, GCP), SaaS discovery, and even dark web monitoring for leaked credentials or code repositories. The goal is a unified inventory that correlates external findings with internal context."
-          },
-          {
-            heading: "2. Classification & Context",
-            content: "An IP address or domain name means nothing without context. Is this asset critical? Who owns it? What data does it process? Classification involves enriching raw assets with business context, ownership tags, and sensitivity levels. This is where ASM integrates with your CMDB and HR systems to assign ownership automatically."
-          },
-          {
-            heading: "3. Prioritization & Risk Scoring",
-            content: "Not all assets pose the same risk. A public-facing login portal for your customer database is infinitely more critical than a marketing microsite. Risk scoring should factor in exploitability, asset criticality, exposure level, and threat intelligence. This helps security teams focus on the 5% of assets that represent 95% of the risk."
-          },
-          {
-            heading: "4. Remediation & Monitoring",
-            content: "ASM fails if it doesn't drive action. Remediation workflows must be integrated into the tools developers and IT teams already use, like Jira, ServiceNow, or Slack. Automated ticketing, clear remediation guidance, and continuous monitoring to verify fixes are essential. The loop isn't closed until the risk is mitigated or accepted."
-          }
+          "If security teams could keep one wish, it would be simple: “Show me everything an attacker could reasonably reach.” Unfortunately, “everything” changes constantly—cloud instances scale up and down, APIs get deployed, DNS records update, credentials rotate, and third parties connect in ways you may not fully control.",
+          "Attack surface management (ASM) helps solve that problem by treating exposure as a living system. Instead of relying on point-in-time scans or periodic audits, ASM builds an ongoing process to: discover assets, understand how they’re exposed, prioritize what matters most, reduce risk, and continuously verify improvements.",
+          "Think of ASM as the “source of truth” layer for exposure: not just a list of servers, but a continuously updated map of what could be targeted—internally and externally—based on real connectivity, identity boundaries, and business context."
         ]
       },
       {
-        title: "Building Your ASM Pipeline",
+        heading: "Core outcomes ASM should deliver",
         paragraphs: [
-          "For organizations looking to build or enhance their ASM capabilities, a layered approach works best. Start with the low-hanging fruit and mature over time. Below is a practical example of how you might structure an automated discovery pipeline using open-source tools and cloud functions."
+          "A mature ASM program usually succeeds when you can answer these questions quickly and confidently:",
+          "• What is exposed to the internet (and to which regions / networks)?",
+          "• What assets exist in your environment that you don’t fully understand yet (shadow IT, orphaned cloud resources, forgotten subdomains)?",
+          "• Which exposures are most likely to lead to business impact (not just which port is open)?",
+          "• Are our remediation actions improving reality—or just paperwork?",
+          "• How does the exposure change when we deploy, scale, or onboard vendors?"
         ],
-        codeBlock: {
-          language: "javascript",
-          title: "Simplified ASM Discovery Pipeline Logic",
-          code: `// Example: Orchestrating ASM discovery checks
-const asmPipeline = async (targetDomain) => {
-  // 1. Passive Enumeration
-  const subdomains = await enumerateSubdomains(targetDomain);
-  
-  // 2. Active Verification
-  const liveAssets = await verifyLiveHosts(subdomains);
-  
-  // 3. Port & Service Detection
-  const services = await scanServices(liveAssets);
-  
-  // 4. Cloud Correlation
-  const cloudContext = await correlateWithCloudProviders(services);
-  
-  // 5. Risk Scoring
-  const riskScore = calculateRiskScore({
-    exposure: services.exposedPorts,
-    criticality: cloudContext.tags.criticality,
-    vulnerabilities: await checkCVEs(services.banners)
-  });
-  
-  // 6. Alerting & Ticketing
-  if (riskScore > THRESHOLD) {
-    await createRemediationTicket({
-      asset: targetDomain,
-      score: riskScore,
-      owner: cloudContext.owner,
-      findings: services.findings
-    });
-  }
-  
-  return { assets: liveAssets, riskScore };
-};`
-        }
-      },
-      {
-        title: "Common ASM Pitfalls to Avoid",
-        paragraphs: [
-          "Even with the best tools, ASM programs can stumble. Here are the most common failure modes we see in the wild:",
-          "First, alert fatigue. If your ASM tool generates hundreds of low-priority alerts daily, teams will ignore them. Tuning is essential. Focus on high-fidelity alerts that require immediate action.",
-          "Second, lack of ownership. Finding an asset is useless if no one knows who owns it. Invest time in automating ownership attribution through tags, DNS records, and integration with organizational directories.",
-          "Third, treating ASM as a one-time project. ASM is a process, not a project. Your attack surface changes daily; your monitoring must match that cadence. Continuous monitoring is non-negotiable."
+        bullets: [
+          "ASM is continuous, not one-time.",
+          "ASM prioritizes risk and business impact, not raw volume.",
+          "ASM verifies reduction of exposure, not just reporting."
         ]
       },
       {
-        title: "The Future of ASM",
+        heading: "A practical ASM lifecycle (the pattern that scales)",
         paragraphs: [
-          "As we move forward, ASM is converging with other security disciplines. We're seeing the rise of CAASM (Cyber Asset Attack Surface Management), which focuses on internal asset aggregation, and EASM (External Attack Surface Management), which focuses on external discovery. The future lies in unifying these views.",
-          "Additionally, AI and machine learning are playing a larger role in predicting attack paths and automating risk assessment. The goal is no longer just to see the attack surface but to understand how an attacker might traverse it and to automatically harden the most likely paths."
+          "Many ASM frameworks share the same backbone: discover exposure, normalize and validate it, prioritize, remediate, and then monitor so the cycle repeats automatically.",
+          "Here’s a simple lifecycle you can implement in phases."
+        ],
+        bullets: [
+          "1) Discover: collect asset and exposure signals (DNS, cloud inventory, routing, certificates, service banners, API endpoints, internal network reachability).",
+          "2) Profile: normalize into a consistent model (asset identity, owner, environment, criticality, exposure type).",
+          "3) Prioritize: rank exposures using context (business impact, likelihood, exploitability indicators, authentication strength, network reachability).",
+          "4) Reduce: close gaps—remove services, enforce auth, restrict networking, rotate or revoke credentials, harden configurations, add compensating controls.",
+          "5) Verify: re-scan and prove the change (confirm service removal, firewall rules, auth behavior, and access controls).",
+          "6) Govern: set ownership, SLAs, exception handling, and continuous monitoring triggers."
         ]
-      }
-    ]
+      },
+      {
+        heading: "What counts as “attack surface” (internal + external)",
+        paragraphs: [
+          "A common early mistake is treating ASM as purely internet-facing. In reality, internal exposure matters because attackers often start inside—through stolen credentials, misconfigured trust relationships, compromised endpoints, or remote-access mechanisms.",
+          "ASM should therefore cover multiple exposure dimensions, such as:",
+          "• External digital footprint: public domains, subdomains, IP ranges, certificates, web apps, exposed APIs, VPN gateways, load balancers.",
+          "• Network reachability: open ports, routing paths, security group rules, firewall policies, east-west connectivity.",
+          "• Identity attack surface: authentication flows, authorization models, token issuance, SSO trust, federation endpoints.",
+          "• Cloud and SaaS configuration exposure: storage buckets, IAM permissions, cross-account roles, API gateways, data exports.",
+          "• Application-level exposure: debug endpoints, weak auth, verbose error messages, insecure defaults.",
+          "• Third-party and partner pathways: vendor integrations, shared services, remote access, APIs exposed to external clients."
+        ]
+      },
+      {
+        heading: "Attack Surface Map diagram (conceptual model)",
+        images: [
+          {
+            alt: "Conceptual Attack Surface Map showing discovery, profiling, prioritization, reduction and verification loops",
+            svg: `
+              <svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420">
+                <defs>
+                  <style>
+                    .t{font:600 14px system-ui, -apple-system, Segoe UI, Roboto, Arial; fill:#111827}
+                    .s{font:500 12px system-ui, -apple-system, Segoe UI, Roboto, Arial; fill:#374151}
+                    .b{fill:#f3f4f6; stroke:#d1d5db; stroke-width:1}
+                    .c{fill:#ecfeff; stroke:#67e8f9; stroke-width:2}
+                    .d{fill:#fff7ed; stroke:#fdba74; stroke-width:2}
+                    .e{fill:#f5f3ff; stroke:#c4b5fd; stroke-width:2}
+                    .a{fill:#ecfdf5; stroke:#34d399; stroke-width:2}
+                    .arrow{stroke:#6b7280; stroke-width:2; marker-end:url(#m)}
+                  </style>
+                  <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+                  </marker>
+                </defs>
+
+                <text x="30" y="34" class="t">Attack Surface Management (ASM) — Continuous Exposure Loop</text>
+
+                <rect x="30" y="65" width="170" height="70" rx="14" class="c"/>
+                <text x="50" y="92" class="t">1) Discover</text>
+                <text x="50" y="112" class="s">Signals • Inventory</text>
+
+                <rect x="235" y="65" width="170" height="70" rx="14" class="d"/>
+                <text x="255" y="92" class="t">2) Profile</text>
+                <text x="255" y="112" class="s">Normalize • Validate</text>
+
+                <rect x="440" y="65" width="170" height="70" rx="14" class="e"/>
+                <text x="460" y="92" class="t">3) Prioritize</text>
+                <text x="460" y="112" class="s">Risk • Business impact</text>
+
+                <rect x="645" y="65" width="225" height="70" rx="14" class="a"/>
+                <text x="665" y="92" class="t">4) Reduce Exposure</text>
+                <text x="665" y="112" class="s">Remove • Restrict • Harden</text>
+
+                <path d="M200 100 L235 100" class="arrow" fill="none"/>
+                <path d="M405 100 L440 100" class="arrow" fill="none"/>
+                <path d="M610 100 L645 100" class="arrow" fill="none"/>
+
+                <rect x="235" y="190" width="255" height="70" rx="14" class="c"/>
+                <text x="255" y="217" class="t">5) Verify Remediation</text>
+                <text x="255" y="237" class="s">Re-scan • Re-test • Prove</text>
+
+                <rect x="520" y="190" width="210" height="70" rx="14" class="d"/>
+                <text x="540" y="217" class="t">6) Govern & Monitor</text>
+                <text x="540" y="237" class="s">Owners • SLAs • Alerts</text>
+
+                <path d="M490 135 C490 165 490 165 490 190" class="arrow" fill="none"/>
+                <path d="M705 165 C705 165 705 165 705 190" class="arrow" fill="none"/>
+
+                <text x="30" y="315" class="t">Outcome: exposure stays visible and shrinking over time</text>
+                <text x="30" y="340" class="s">Continuous discovery + validation + risk-based reduction + verification.</text>
+              </svg>
+            `,
+          },
+        ],
+        paragraphs: [
+          "In practice, ASM is less about a single tool and more about a repeatable workflow. Discovery produces candidate exposure. Profiling turns candidates into something consistent: an asset identity you can own, a classification you can act on, and an exposure method you can measure.",
+          "Prioritization then decides what to address first. Reduction is where the security program meets engineering reality: network controls, authentication/authorization changes, configuration hardening, and decommissioning unused resources.",
+          "Finally, verification prevents the “report-and-forget” failure mode. If you don’t confirm the exposure is gone, you can’t claim risk reduction."
+        ]
+      },
+      {
+        heading: "Profiling exposure: normalize data so actions become possible",
+        paragraphs: [
+          "ASM often fails not because teams can’t discover assets, but because the output isn’t actionable. A discovery feed might contain thousands of findings—but without context you can’t assign owners, you can’t validate whether it’s truly exposed, and you can’t reliably remediate.",
+          "Profiling typically includes:",
+        ],
+        bullets: [
+          "Asset identity mapping (domain → service, IP → environment, cloud resource → application).",
+          "Ownership enrichment (teams, service owners, service catalogs).",
+          "Exposure classification (web, API, SSH/RDP, storage, identity federation, internal reachability).",
+          "Criticality labeling (business impact tiers, data sensitivity, compliance requirements).",
+          "Verification status (confirmed vs unconfirmed, stale vs current)."
+        ]
+      },
+      {
+        heading: "Prioritization: focus on risk, not “everything loud”",
+        paragraphs: [
+          "ASM prioritization is where mature programs differentiate from raw scanning. Two exposures can look similar—same port open, same banner—but have very different risk because of authentication strength, network segmentation, and business criticality.",
+          "A practical approach is to combine:",
+          "1) Business context: what is the asset used for? what would break if it were compromised?",
+          "2) Exposure context: is it internet-facing, reachable from partner networks, or only internal to a trusted zone?",
+          "3) Control quality: is it protected by strong authentication and authorization? is it rate-limited? is it behind a WAF?",
+          "4) Exploitability indicators: known weak configurations, outdated versions (when safe and appropriate), and service behavior patterns.",
+          "Then rank exposures with a scoring model or rubric and attach a remediation owner."
+        ]
+      },
+      {
+        heading: "Common ASM implementation pitfalls (and how to avoid them)",
+        paragraphs: [
+          "Getting ASM right is largely about avoiding predictable failure modes.",
+          "Here are some patterns that derail programs:"
+        ],
+        bullets: [
+          "Pitfall: treating ASM as a one-time inventory exercise → Fix: build continuous discovery + verification.",
+          "Pitfall: chasing false positives without proof → Fix: add validation steps and define “confirmed exposure.”",
+          "Pitfall: ignoring identity and authorization → Fix: include SSO/federation boundaries and token flows.",
+          "Pitfall: missing internal reachability → Fix: add east-west mapping and trust boundary analysis.",
+          "Pitfall: no ownership model → Fix: assign service owners and define remediation SLAs.",
+          "Pitfall: failing to close the loop → Fix: re-test after remediation and track deltas."
+        ]
+      },
+      {
+        heading: "Metrics that actually indicate ASM success",
+        paragraphs: [
+          "ASM dashboards should answer: “Are we reducing exposure over time, and do we trust the data?”",
+          "Useful metrics include:"
+        ],
+        bullets: [
+          "Exposure coverage: percentage of critical services mapped with confirmed exposure status.",
+          "Time to validation: average time to move from “observed” to “confirmed.”",
+          "Remediation throughput: number (or weighted risk score) of exposures reduced per week/month.",
+          "Verification rate: percentage of remediation actions that are re-tested and proven.",
+          "Exposure churn: how often new internet-facing resources appear without owner assignment (shadow changes).",
+          "Auth hardening progress: trend of services meeting minimum auth/control baselines.",
+          "Change-driven exposure: exposure increases correlated with deployments (signals missed in SDLC)."
+        ]
+      },
+      {
+        heading: "Integrating ASM with engineering and vulnerability management",
+        paragraphs: [
+          "ASM and vulnerability management should reinforce each other. ASM identifies exposure paths; vulnerability management focuses on weaknesses within those paths.",
+          "For example, ASM might discover an internet-facing admin API. Vulnerability management then helps you prioritize and remediate the vulnerabilities in that API—plus verify that auth and network controls remain effective.",
+          "The tightest teams integrate ASM signals into CI/CD guardrails (e.g., prevent deployment of publicly exposed endpoints without approved controls)."
+        ]
+      },
+      {
+        heading: "A phased rollout plan (30/60/90 days)",
+        paragraphs: [
+          "If you’re starting ASM from scratch, you don’t need “perfect coverage” on day one. You need momentum and correctness.",
+          "Here’s a phased plan many organizations can execute: "
+        ],
+        bullets: [
+          "First 30 days — establish baseline: pick top business-critical services, run initial discovery, define the exposure model and ownership approach, and set data quality expectations.",
+          "Days 31–60 — validate and map: confirm exposure status for top assets, enrich with owners and criticality, and implement a simple risk-based prioritization rubric.",
+          "Days 61–90 — reduce and verify: execute exposure reduction actions on high-priority findings, re-test to prove closure, and publish success metrics to leadership."
+        ]
+      },
+      {
+        heading: "Bottom line",
+        paragraphs: [
+          "Attack surface management works when it’s treated as a continuous operational discipline. When you can discover, profile, prioritize, reduce, and verify exposure with an ownership model and metrics, you stop guessing and start shrinking your real-world risk.",
+          "The best ASM programs aren’t measured by how many findings they generate. They’re measured by how effectively the organization prevents new exposure from appearing—and proves when exposure is truly gone."
+        ]
+      },
+    ],
   },
+
   {
-    id: "vm-lifecycle-mastery",
-    category: "VULNERABILITY MANAGEMENT",
-    categoryColor: "oklch(0.75 0.16 30)",
-    categoryBg: "oklch(0.75 0.16 30 / 0.1)",
-    categoryBorder: "oklch(0.75 0.16 30 / 0.3)",
-    title: "Mastering Vulnerability Management: From Detection to Remediation",
-    excerpt: "Vulnerability management is often reduced to scanning and patching, but true mastery requires a holistic lifecycle approach. This write-up explores risk-based prioritization, the limitations of CVSS, remediation SLAs that work, and how to bridge the gap between security findings and engineering workflows.",
-    date: "Jan 2025",
-    readTime: "19 min read",
-    author: "Security Research Team",
-    tags: ["VM", "CVSS", "Remediation", "Risk-Based", "SLA"],
+    id: "vulnerability-management",
+    category: "GUIDE",
+    categoryColor: "oklch(0.62 0.17 55)",
+    categoryBg: "oklch(0.62 0.17 55 / 0.12)",
+    categoryBorder: "oklch(0.62 0.17 55 / 0.30)",
+    title: "Vulnerability Management: Build a Risk-Based Program That People Can Actually Run",
+    excerpt:
+      "Vulnerability management is not just scanning for CVEs. It’s an end-to-end system for finding weaknesses, prioritizing them with context, remediating safely, and verifying outcomes. This guide covers a practical lifecycle, controls against false positives, SLAs, and the metrics that keep the program honest.",
+    date: "May 2026",
+    readTime: "20 min read",
     sections: [
       {
-        title: "Beyond the Scanner: The VM Reality Check",
+        heading: "The problem with “scan and patch”",
         paragraphs: [
-          "If you ask most organizations about their vulnerability management program, they'll point to their scanner dashboard. They'll show you graphs of critical vulnerabilities trending down and talk about patch compliance rates. But ask them how quickly they remediate actively exploited vulnerabilities, or how they prioritize risks in the context of their specific environment, and the answers often get murky.",
-          "Vulnerability Management (VM) is not about eliminating every vulnerability. That's impossible. It's about managing risk intelligently. It's about making data-driven decisions on what to fix, when to fix it, and what to accept. The difference between a mature VM program and a struggling one isn't the scanner; it's the process, the prioritization logic, and the collaboration with engineering teams."
-        ],
-        image: {
-          src: "/images/vm/vm-lifecycle-diagram.png",
-          alt: "Circular diagram showing the VM lifecycle: Discover, Prioritize, Assess, Report, Remediate, Verify",
-          caption: "Figure 1: The VM lifecycle is a continuous loop. Skipping verification or assessment leads to technical debt and false security."
-        }
-      },
-      {
-        title: "The Vulnerability Management Lifecycle",
-        paragraphs: [
-          "A robust VM program operates on a continuous lifecycle. Each phase feeds into the next, creating a feedback loop that improves over time."
-        ],
-        list: {
-          title: "Core Lifecycle Phases",
-          items: [
-            { label: "Discovery", value: "Identify assets and detect vulnerabilities using scanners, agents, and threat intel." },
-            { label: "Prioritization", value: "Rank vulnerabilities based on risk, not just severity scores." },
-            { label: "Assessment", value: "Validate findings, check for false positives, and assess business impact." },
-            { label: "Remediation", value: "Apply patches, implement mitigations, or accept risk with documentation." },
-            { label: "Verification", value: "Rescan to confirm remediation and close the loop." },
-            { label: "Reporting", value: "Track metrics, SLAs, and trends to drive continuous improvement." }
-          ]
-        }
-      },
-      {
-        title: "The CVSS Trap and Risk-Based Prioritization",
-        paragraphs: [
-          "CVSS (Common Vulnerability Scoring System) is the industry standard for scoring vulnerabilities, but it has significant limitations. CVSS measures severity, not risk. A vulnerability with a CVSS score of 9.8 might be critical in one context but irrelevant in another if the affected system is isolated, lacks sensitive data, or has compensating controls.",
-          "Risk-based prioritization goes beyond CVSS by incorporating contextual factors. This includes threat intelligence (is this being exploited in the wild?), asset criticality (what data does this system hold?), exposure (is it internet-facing?), and exploit maturity (is there a public exploit available?)."
-        ],
-        codeBlock: {
-          language: "javascript",
-          title: "Risk Score Calculation Example",
-          code: `// Enhanced risk scoring beyond CVSS
-const calculateRiskScore = (vuln, asset, threatIntel) => {
-  const baseScore = vuln.cvssScore; // 0-10
-  
-  // Contextual multipliers
-  const exploitActive = threatIntel.exploitedInWild ? 1.5 : 1.0;
-  const assetCriticality = asset.criticality === 'high' ? 1.4 : 
-                           asset.criticality === 'medium' ? 1.2 : 1.0;
-  const exposureFactor = asset.internetFacing ? 1.3 : 0.8;
-  const exploitMaturity = vuln.exploitAvailable ? 1.2 : 1.0;
-  
-  // Calculate weighted risk score
-  let riskScore = baseScore * exploitActive * assetCriticality * 
-                  exposureFactor * exploitMaturity;
-  
-  // Cap at 10
-  riskScore = Math.min(riskScore, 10);
-  
-  return {
-    score: riskScore.toFixed(2),
-    priority: riskScore >= 8.5 ? 'Critical' :
-              riskScore >= 7.0 ? 'High' :
-              riskScore >= 4.0 ? 'Medium' : 'Low',
-    factors: {
-      exploitedInWild: threatIntel.exploitedInWild,
-      criticalAsset: asset.criticality === 'high',
-      internetFacing: asset.internetFacing
-    }
-  };
-};`
-        }
-      },
-      {
-        title: "Setting Realistic SLAs",
-        paragraphs: [
-          "Service Level Agreements (SLAs) are the contract between security and engineering. They define how quickly vulnerabilities must be remediated based on their risk level. However, many organizations set SLAs that are unrealistic, leading to missed deadlines and friction between teams.",
-          "Effective SLAs should be risk-based and achievable. They should also include exceptions for vulnerabilities that require more time due to technical constraints, with a formal risk acceptance process. Here's a recommended SLA framework:"
-        ],
-        table: {
-          headers: ["Risk Level", "Remediation SLA", "Criteria"],
-          rows: [
-            ["Critical", "48-72 hours", "Actively exploited, internet-facing, or affects crown jewel assets."],
-            ["High", "7-14 days", "High severity with exploit available or significant business impact."],
-            ["Medium", "30 days", "Moderate severity with limited exploitability or lower impact."],
-            ["Low", "90 days or risk accept", "Low severity, no exploit, minimal impact, or compensating controls."]
-          ]
-        }
-      },
-      {
-        title: "Bridging the Gap with Engineering",
-        paragraphs: [
-          "One of the biggest challenges in VM is getting vulnerabilities fixed. Security teams often dump spreadsheets of findings on engineering teams, who are already overwhelmed with feature development and bug fixes. This approach rarely works.",
-          "To improve remediation rates, security must integrate into the engineering workflow. This means:",
-          "• Sending findings directly to the tools engineers use, like Jira, GitHub Issues, or ServiceNow.",
-          "• Providing clear, actionable remediation guidance, not just vulnerability descriptions.",
-          "• Automating where possible, such as creating pull requests for dependency updates.",
-          "• Measuring and celebrating improvements, not just pointing out failures."
-        ],
-        image: {
-          src: "/images/vm/security-engineering-integration.png",
-          alt: "Flowchart showing vulnerability findings flowing from scanners to ticketing systems and CI/CD pipelines",
-          caption: "Figure 2: Integrating VM findings into engineering workflows reduces friction and accelerates remediation."
-        }
-      },
-      {
-        title: "Metrics That Matter",
-        paragraphs: [
-          "How do you measure the success of your VM program? Many teams focus on vanity metrics like total vulnerabilities found or patch compliance percentage. These metrics can be misleading. A better approach is to track metrics that reflect actual risk reduction and operational efficiency."
-        ],
-        list: {
-          title: "Key VM Metrics",
-          items: [
-            { label: "Mean Time to Remediate (MTTR)", value: "Average time to fix vulnerabilities by risk level. Track trends over time." },
-            { label: "Remediation Rate", value: "Percentage of vulnerabilities fixed within SLA. Aim for >90% for Critical/High." },
-            { label: "Risk Reduction", value: "Change in overall risk score over time, weighted by asset criticality." },
-            { label: "Exception Rate", value: "Percentage of vulnerabilities with accepted risk. High rates may indicate SLA issues." },
-            { label: "Scanner Coverage", value: "Percentage of assets being scanned. Gaps in coverage are blind spots." }
-          ]
-        }
-      },
-      {
-        title: "Advanced VM Strategies",
-        paragraphs: [
-          "As your VM program matures, consider these advanced strategies to further reduce risk:",
-          "• Threat-Led Prioritization: Use threat intelligence feeds to prioritize vulnerabilities that are being actively exploited by threat actors targeting your industry.",
-          "• Predictive Analytics: Leverage machine learning to predict which vulnerabilities are most likely to be exploited based on historical patterns and vulnerability characteristics.",
-          "• Automated Remediation: Implement automated patching for low-risk, high-confidence updates, especially for third-party libraries and dependencies.",
-          "• Bug Bounty Integration: Incorporate findings from bug bounty programs into your VM workflow to catch vulnerabilities that scanners miss."
+          "Many vulnerability management programs begin with good intentions: run scanners, upload results, and expect teams to patch what’s listed. But this approach often collapses under three pressures:",
+          "1) Vulnerabilities outnumber engineering capacity.",
+          "2) Scanner output can contain false positives, duplicates, or findings without enough context to act on.",
+          "3) Patching is not just installing updates—it’s change management, regression risk, deployment windows, and safe rollback plans.",
+          "The goal of a strong vulnerability management program is to turn noisy vulnerability signals into a reliable remediation pipeline driven by risk and verified outcomes."
         ]
       },
       {
-        title: "Conclusion: VM as a Business Enabler",
+        heading: "A vulnerability management lifecycle that works in the real world",
         paragraphs: [
-          "Vulnerability management is often viewed as a cost center, a necessary evil to keep the auditors happy. But when done right, VM is a business enabler. It reduces the likelihood of costly breaches, builds customer trust, and enables faster, safer innovation.",
-          "The key is to move beyond scanning and patching to a risk-based, collaborative approach. Focus on what matters, integrate with engineering workflows, measure the right metrics, and continuously improve. In a world where new vulnerabilities are discovered daily, effective VM isn't just good security—it's good business."
+          "A useful mental model is a lifecycle with explicit states. Each vulnerability finding moves through those states—so you know what’s happening, who owns it, and whether it’s actually fixed.",
+          "Below is a lifecycle you can adapt."
+        ],
+        bullets: [
+          "1) Detect: run authenticated scans, image/container scanning, and application dependency analysis (as appropriate).",
+          "2) Normalize: de-duplicate findings, reconcile versions, and standardize data (service, environment, asset identifiers).",
+          "3) Validate & triage: determine if the vulnerability is real, relevant, and reachable (or exploitable) in your environment.",
+          "4) Prioritize: rank with risk context (business impact, exposure, exploitability, existing compensating controls).",
+          "5) Plan remediation: patch, upgrade, configuration change, or mitigate via compensating controls.",
+          "6) Execute & verify: confirm the fix (re-scan, functional testing, and evidence collection).",
+          "7) Report & learn: trend root causes and improve the program (reduce recurring issues, improve detection quality)."
+        ]
+      },
+      {
+        heading: "Define scope: what you scan must match what attackers can reach",
+        paragraphs: [
+          "Scope is one of the most underestimated parts of vulnerability management. If you scan everything but prioritize nothing, you’ll burn cycles. If you scan the wrong things, you’ll miss the real risk.",
+          "A practical scope strategy aligns scanning with exposure pathways:",
+          "• External: internet-facing assets, VPN/remote access endpoints, publicly reachable APIs, and cloud ingress.",
+          "• Internal: systems reachable from key networks (e.g., by common trust relationships).",
+          "• Identity: SSO/IdP integrations, service accounts, token lifetimes (where applicable).",
+          "• Build and supply chain: container images, package dependencies, CI secrets exposure, and build artifacts.",
+          "• Data protection: vulnerabilities that threaten sensitive data confidentiality or integrity (even if they’re not in the most “internet-exposed” tier)."
+        ]
+      },
+      {
+        heading: "Triage and validation: reduce noise before you ask teams to act",
+        paragraphs: [
+          "If your triage step is weak, vulnerability management becomes a flood—teams lose confidence and “tickets become background radiation.”",
+          "Validation typically answers: Is this vulnerability actually present in the affected asset, and is it relevant to our threat model?",
+          "Common validation checks include:",
+        ],
+        bullets: [
+          "Version verification: confirm the component version through reliable evidence (agent data, logs, artifact manifests).",
+          "Reachability checks: determine whether the vulnerable component is exposed or exploitable from the attacker’s perspective.",
+          "Configuration context: assess whether security controls are present (e.g., protected endpoints, strict auth, WAF rules, sandboxing).",
+          "Exception handling: if you can’t remediate quickly, document compensating controls and risk acceptance criteria."
+        ]
+      },
+      {
+        heading: "Prioritization: move from CVSS-only to risk-based scoring",
+        paragraphs: [
+          "CVSS is useful—but it’s not enough. CVSS is calculated using standardized assumptions that may not match your environment. A vulnerability with a high CVSS score might be unreachable or mitigated by robust authentication. Conversely, a medium CVSS issue might be highly risky if it impacts a critical service with weak compensating controls.",
+          "A practical risk-based prioritization framework often uses factors like:"
+        ],
+        bullets: [
+          "Exploitability in your context (authentication requirements, network reachability, prerequisites).",
+          "Business criticality of the affected service.",
+          "Exposure type (internet-facing vs internal-only vs isolated segment).",
+          "Presence of mitigations (WAF, input validation, sandboxing, hardened configs).",
+          "Detection confidence (authenticated scan, verified versions, false positive likelihood).",
+          "Threat intelligence relevance (public exploit availability—used carefully and responsibly)."
+        ]
+      },
+      {
+        heading: "Vulnerability management workflow diagram",
+        images: [
+          {
+            alt: "Conceptual vulnerability management workflow with detect, normalize, triage, prioritize, remediate, verify and report steps",
+            svg: `
+              <svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430">
+                <defs>
+                  <style>
+                    .h{font:700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial; fill:#111827}
+                    .p{font:500 12px system-ui, -apple-system, Segoe UI, Roboto, Arial; fill:#374151}
+                    .r1{fill:#eef2ff; stroke:#818cf8; stroke-width:2}
+                    .r2{fill:#ecfdf5; stroke:#34d399; stroke-width:2}
+                    .r3{fill:#fef3c7; stroke:#fbbf24; stroke-width:2}
+                    .r4{fill:#ffe4e6; stroke:#fb7185; stroke-width:2}
+                    .r5{fill:#e0f2fe; stroke:#38bdf8; stroke-width:2}
+                    .arrow{stroke:#6b7280; stroke-width:2; marker-end:url(#m)}
+                  </style>
+                  <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+                  </marker>
+                </defs>
+
+                <text x="30" y="34" class="h">Risk-Based Vulnerability Management Lifecycle</text>
+                
+                <rect x="30" y="65" width="170" height="78" rx="14" class="r1"/>
+                <text x="55" y="97" class="h" style="font-size:14px;">Detect</text>
+                <text x="55" y="117" class="p">Scans • SBOM</text>
+
+                <rect x="235" y="65" width="170" height="78" rx="14" class="r3"/>
+                <text x="260" y="97" class="h" style="font-size:14px;">Normalize</text>
+                <text x="260" y="117" class="p">De-dupe • Map</text>
+
+                <rect x="440" y="65" width="170" height="78" rx="14" class="r4"/>
+                <text x="465" y="97" class="h" style="font-size:14px;">Triage</text>
+                <text x="465" y="117" class="p">Validate • Reachability</text>
+
+                <rect x="645" y="65" width="225" height="78" rx="14" class="r2"/>
+                <text x="670" y="97" class="h" style="font-size:14px;">Prioritize</text>
+                <text x="670" y="117" class="p">Risk • Context • SLA</text>
+
+                <path d="M200 104 L235 104" class="arrow" fill="none"/>
+                <path d="M405 104 L440 104" class="arrow" fill="none"/>
+                <path d="M610 104 L645 104" class="arrow" fill="none"/>
+
+                <rect x="235" y="175" width="230" height="86" rx="14" class="r5"/>
+                <text x="260" y="206" class="h" style="font-size:14px;">Remediate</text>
+                <text x="260" y="226" class="p">Patch • Upgrade • Mitigate</text>
+
+                <rect x="485" y="175" width="210" height="86" rx="14" class="r2"/>
+                <text x="510" y="206" class="h" style="font-size:14px;">Verify</text>
+                <text x="510" y="226" class="p">Re-scan • Test • Evidence</text>
+
+                <rect x="705" y="175" width="170" height="86" rx="14" class="r3"/>
+                <text x="730" y="206" class="h" style="font-size:14px;">Report</text>
+                <text x="730" y="226" class="p">Trends • Root causes</text>
+
+                <path d="M475 143 C475 170 475 170 355 175" class="arrow" fill="none"/>
+                <path d="M610 143 C610 170 610 170 580 175" class="arrow" fill="none"/>
+                <path d="M760 143 C760 170 760 170 770 175" class="arrow" fill="none"/>
+
+                <text x="30" y="325" class="p">Outcome: validated fixes delivered with proof, prioritized by actual risk.</text>
+              </svg>
+            `,
+          },
+        ],
+        paragraphs: [
+          "This diagram highlights a key principle: detection is only the first step. Without normalization, triage, and verification, vulnerability management turns into noisy reporting instead of risk reduction."
+        ]
+      },
+      {
+        heading: "SLAs, ownership, and RACI: make remediation predictable",
+        paragraphs: [
+          "A vulnerability management program should answer “who fixes it, when, and how we know it’s done.” That requires ownership and clear operational contracts.",
+          "A simple RACI model often looks like:",
+        ],
+        bullets: [
+          "Responsible (engineering/platform): implement patches or mitigations.",
+          "Accountable (service owners): approve plans and ensure closure within SLAs.",
+          "Consulted (security/architecture): provide guidance on risk and compensating controls.",
+          "Informed (leadership/IT ops/compliance): receive reports with validated outcomes."
+        ]
+      },
+      {
+        heading: "Compensating controls and exceptions: be rigorous, not sloppy",
+        paragraphs: [
+          "Not every vulnerability can be patched immediately. Dependencies, maintenance windows, legacy constraints, and deployment risk can delay remediation.",
+          "When exceptions are necessary, they should be managed with discipline: compensating controls, time-bounded risk acceptance, and clear evidence of effectiveness. Common compensating controls include improved authentication, network segmentation, strict allowlisting, WAF rules, disabling risky features, and enhanced monitoring."
+        ],
+        bullets: [
+          "Time-bound: define start/end dates for exceptions.",
+          "Evidence-based: document why the control mitigates the risk.",
+          "Review cadence: reassess when new threat intelligence or scan data appears.",
+          "No silent exceptions: require approvals and track them like remediation items."
+        ]
+      },
+      {
+        heading: "Verification: prove the vulnerability is gone (or prove it’s still mitigated)",
+        paragraphs: [
+          "A fix is only real when your evidence says it is. Verification typically includes re-scanning (preferably authenticated) and, for important systems, functional testing.",
+          "Verification should also check for recurrence. Some environments “fix” vulnerabilities but drift back due to redeployments or configuration templates."
+        ],
+        bullets: [
+          "Re-scan after remediation and confirm version/config changes.",
+          "Track verification status (not just ticket status).",
+          "For critical services, include targeted validation tests.",
+          "Use configuration-as-code policies to prevent regressions."
+        ]
+      },
+      {
+        heading: "Integrate with SDLC and CI/CD to prevent repeat findings",
+        paragraphs: [
+          "If vulnerability management is only reactive, it will always feel like a treadmill. Integration reduces future workload by shifting left.",
+          "Consider embedding security checks into development workflows:",
+          "• Dependency and SBOM generation during builds.",
+          "• Policy checks that block vulnerable dependencies above an approved threshold (with safe exception workflow).",
+          "• Container scanning and signature/attestation for images.",
+          "• Automated config validation (CSP headers, TLS settings, IAM boundaries).",
+          "• “No public exposure without controls” guardrails for ASM-linked services."
+        ]
+      },
+      {
+        heading: "Metrics: how to measure what matters (and avoid vanity metrics)",
+        paragraphs: [
+          "Many orgs measure vulnerability management using vanity counters like “# of critical CVEs.” Those numbers can go up or down for reasons unrelated to actual risk (scan coverage changes, de-duplication differences, asset churn).",
+          "Better metrics focus on validated risk reduction and program health:"
+        ],
+        bullets: [
+          "MTTR for validated vulnerabilities (by severity and asset tier).",
+          "SLAs met rate for each severity level (including verification completion).",
+          "Reopen rate after “closure” (signals rushed or unverified fixes).",
+          "False positive rate (from triage outcomes).",
+          "Recurring vulnerability rate (top root causes across services).",
+          "Coverage of critical assets with verified scanning (and authenticated where possible)."
+        ]
+      },
+      {
+        heading: "A real-world example workflow (illustrative)",
+        paragraphs: [
+          "Imagine you receive a finding: a web application dependency is flagged as vulnerable.",
+          "A strong program would:",
+          "1) Normalize: map the dependency to a specific service and deployment environment.",
+          "2) Validate: confirm the affected package version exists in the running artifact (not just in a build cache).",
+          "3) Prioritize: assess whether the vulnerable code path is reachable, whether the endpoint requires auth, and whether other controls reduce risk.",
+          "4) Remediate: upgrade dependency, run integration tests, and coordinate deployment.",
+          "5) Verify: re-scan after deployment and confirm the dependency version and behavior changes.",
+          "6) Learn: if the issue repeats, enforce dependency constraints in CI/CD or improve build reproducibility."
+        ]
+      },
+      {
+        heading: "How vulnerability management connects to Attack Surface Management (ASM)",
+        paragraphs: [
+          "ASM and vulnerability management are strongest when they share context. ASM answers “what could be attacked and how it’s reachable.” Vulnerability management answers “what weaknesses exist in what’s reachable.”",
+          "For example: reducing exposure (closing a public admin endpoint) can transform the risk of vulnerabilities inside that admin component—even if you haven’t patched every underlying CVE yet. Conversely, ASM can reveal newly exposed services that require immediate vulnerability triage after deployments or configuration changes."
+        ]
+      },
+      {
+        heading: "Bottom line",
+        paragraphs: [
+          "The best vulnerability management programs don’t aim to eliminate every vulnerability instantly. They aim to reduce real risk through validated remediation, prioritization with context, and continuous verification.",
+          "When vulnerability management is risk-based, operationally owned, integrated into SDLC, and measured by verified outcomes—not just scanner counts—teams gain trust and remediation becomes predictable."
+        ]
+      },
+      {
+        heading: "Quick checklist (copy/paste for your program review)",
+        paragraphs: [
+          "Use this checklist to sanity-check your vulnerability management process:"
+        ],
+        bullets: [
+          "We have a documented lifecycle with explicit states (detect → triage → remediate → verify).",
+          "We de-duplicate and normalize findings so engineers see actionable items.",
+          "We validate whether findings are real and relevant (not just scanner output).",
+          "We prioritize using business context and exposure, not CVSS alone.",
+          "We have owners, SLAs, and a clear exception workflow with evidence.",
+          "We verify fixes with re-scans and/or functional testing for critical services.",
+          "We track closure quality (verification success, reopen rates, recurring issues).",
+          "We integrate scanning and dependency controls into CI/CD to prevent repeat findings."
         ]
       }
-    ]
-  },
+    ],
+ 	},
   {
     id: "full-kill-chain",
     category: "RED TEAM",
