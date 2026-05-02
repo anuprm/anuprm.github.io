@@ -13614,7 +13614,7 @@ svc_backup   : Backup@123`
       }
     ]
   },
-	{
+  {
     id: "asm-vuln-management-combined-playbook",
     category: "GUIDE",
     categoryColor: "oklch(0.74 0.16 58)",
