@@ -13614,7 +13614,7 @@ svc_backup   : Backup@123`
       }
     ]
   },
-  {
+{
   id: "asm-vm-practitioner-guide",
   category: "SECURITY OPERATIONS",
   categoryColor: "oklch(0.70 0.15 260)",
