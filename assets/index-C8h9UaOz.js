@@ -13615,8 +13615,8 @@ svc_backup   : Backup@123`
     ]
   },
   {
-    id: "attack-surface-vulnerability-management-2025",
-    category: "SECURITY ENGINEERING",
+    id: "attack-surface-vulnerability-management",
+    category: "ASM & Vulnerability Management",
     categoryColor: "oklch(0.65 0.22 145)",
     categoryBg: "oklch(0.65 0.22 145 / 0.1)",
     categoryBorder: "oklch(0.65 0.22 145 / 0.3)",
