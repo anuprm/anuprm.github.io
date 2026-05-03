@@ -14229,7 +14229,7 @@ svc_backup   : Backup@123`
   # For a list of CVEs from your scanner output, check against KEV
   # scanner_cves.txt = one CVE per line from your Nessus/Nuclei output
   while read cve; do
-      if grep -q "^${cve}$" kev_cve_ids.txt; then
+      if grep -q "^\${cve}\$" kev_cve_ids.txt; then
           echo "🔴 KEV MATCH — IMMEDIATE ACTION: $cve"
       fi
   done < scanner_cves.txt
