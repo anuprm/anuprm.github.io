@@ -13625,7 +13625,7 @@ svc_backup   : Backup@123`
       "A comprehensive breakdown of how modern security teams identify, track, and eliminate weaknesses across their digital estate. Covering ASM methodology, vulnerability lifecycle, tooling, and real-world command-line workflows — the way practitioners actually do it.",
     date: "May 2026",
     readTime: "20 min read",
-    imagePlaceholder: { src:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80"},
+    imagePlaceholder: { src: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80"},
     tags: ["ASM", "Vulnerability Management", "Red Team", "Recon", "Nmap", "Nuclei", "CVSS"],
     sections: [
       {
@@ -13637,10 +13637,11 @@ svc_backup   : Backup@123`
         ],
         imagePlaceholder: {
           src: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
-          caption:
-            "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated.",
           alt: "Server room with network cables representing complex attack surfaces",
         },
+        paragraphs: [
+          "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated."
+          ],
       },
       {
         heading: "Part 1 — Attack Surface Management",
@@ -13748,7 +13749,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Mass HTTP Probing and Technology Fingerprinting with HTTPX",
-          snippet: `# Install httpx
+          code: `# Install httpx
   go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
    
   # Probe all resolved subdomains for live web services
@@ -13784,7 +13785,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Shodan & Censys Queries for ASM",
-          snippet: `# Shodan CLI setup
+          code: `# Shodan CLI setup
   pip install shodan
   shodan init YOUR_API_KEY
    
@@ -13825,7 +13826,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Efficient Large-Scale Port Scanning with Masscan + Nmap",
-          snippet: `# Phase 1: Fast port discovery with Masscan (rate-limited to avoid disruption)
+          code: `# Phase 1: Fast port discovery with Masscan (rate-limited to avoid disruption)
   sudo masscan -iL discovered_ips.txt \\
     -p 0-65535 \\
     --rate 1000 \\
@@ -13865,17 +13866,16 @@ svc_backup   : Backup@123`
       {
         imagePlaceholder: {
           src: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1100&auto=format&fit=crop&q=80",
-          caption:
-            "Attack surface discovery involves layering multiple data sources — passive DNS, CT logs, Shodan, and active scanning — to build a complete picture of externally exposed assets.",
           alt: "Matrix-style code visualization representing network reconnaissance",
         },
         paragraphs: [
+          "Attack surface discovery involves layering multiple data sources — passive DNS, CT logs, Shodan, and active scanning — to build a complete picture of externally exposed assets.",
           "Cloud asset exposure deserves special attention. S3 buckets, Azure Blob containers, and GCP storage buckets are notoriously easy to misconfigure, and the consequences of public exposure can be catastrophic. Tools like CloudEnum and S3Scanner automate the discovery of misconfigured cloud storage.",
         ],
         codeBlock: {
           language: "bash",
           label: "Cloud Storage Misconfiguration Discovery",
-          snippet: `# S3 bucket enumeration for a target organisation
+          code: `# S3 bucket enumeration for a target organisation
   python3 cloud_enum.py -k targetcompany -k target-company -k targetcorp \\
     --disable-azure --disable-gcp
    
@@ -13915,7 +13915,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Automated Daily ASM Monitoring with Diff Detection",
-          snippet: `#!/bin/bash
+          code: `#!/bin/bash
   # daily_asm_monitor.sh - Run this as a cron job
    
   DATE=$(date +%Y%m%d)
@@ -13979,14 +13979,13 @@ svc_backup   : Backup@123`
       {
         heading: "The Vulnerability Management Lifecycle",
         paragraphs: [
+          "The vulnerability management lifecycle: Discover → Assess → Prioritise → Remediate → Verify. Most programs are strong on the first two and weak on the last three.",
           "Vulnerability Management is what happens after you know what you have. Where ASM answers 'what is exposed?', VM answers 'what is broken?' — and then, critically, 'what do we fix first, and how?'",
           "The VM lifecycle has five stages that most mature programs follow: Discover (which overlaps with ASM), Assess, Prioritise, Remediate, and Verify. The industry has gotten pretty good at the first two. The last three are where programs fall apart.",
           "Here's the uncomfortable truth that most VM vendors won't tell you: the average enterprise has tens of thousands of open vulnerabilities at any given time. You will never fix all of them. The question isn't 'how do we fix everything?' — it's 'how do we fix the things that matter, fast enough to make a difference?' That reframe is the most important mental shift in modern VM.",
         ],
         imagePlaceholder: {
           src: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=1100&auto=format&fit=crop&q=80",
-          caption:
-            "The vulnerability management lifecycle: Discover → Assess → Prioritise → Remediate → Verify. Most programs are strong on the first two and weak on the last three.",
           alt: "Circular lifecycle diagram representing vulnerability management stages",
         },
       },
@@ -13999,7 +13998,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Nuclei — Template-Based Vulnerability Scanning",
-          snippet: `# Install nuclei
+          code: `# Install nuclei
   go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
    
   # Update templates to latest
@@ -14048,7 +14047,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "OpenVAS / Greenbone Vulnerability Scanning via CLI",
-          snippet: `# Start Greenbone/OpenVAS services (Kali Linux)
+          code: `# Start Greenbone/OpenVAS services (Kali Linux)
   sudo gvm-setup
   sudo gvm-start
    
@@ -14091,7 +14090,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "python",
           label: "CVSS v3.1 Score Breakdown — Understanding the Metrics",
-          snippet: `#!/usr/bin/env python3
+          code: `#!/usr/bin/env python3
   """
   CVSS v3.1 Vector String Parser and Scorer
   Breaks down a CVSS vector into human-readable components
@@ -14213,7 +14212,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Building a Risk-Based Prioritisation Workflow",
-          snippet: `#!/bin/bash
+          code: `#!/bin/bash
   # risk_prioritization.sh
   # Combines CVSS, EPSS, and KEV data for intelligent vuln triage
    
@@ -14273,7 +14272,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Nmap Script Scanning — Authenticated Checks",
-          snippet: `# SMB authenticated enumeration (useful for Windows vulnerability assessment)
+          code: `# SMB authenticated enumeration (useful for Windows vulnerability assessment)
   nmap -p 445 --script smb-vuln-ms17-010,smb-security-mode,smb2-security-mode \\
     10.0.0.0/24 -oN smb_scan.txt
    
@@ -14309,7 +14308,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "python",
           label: "Automated Jira Ticket Creation from Vulnerability Findings",
-          snippet: `#!/usr/bin/env python3
+          code: `#!/usr/bin/env python3
   """
   auto_ticket_creator.py
   Reads Nuclei JSON output, filters by severity,
@@ -14420,7 +14419,7 @@ svc_backup   : Backup@123`
         codeBlock: {
           language: "bash",
           label: "Automated Remediation Verification with Nuclei",
-          snippet: `#!/bin/bash
+          code: `#!/bin/bash
   # verify_remediation.sh
   # Takes a Jira ticket ID and verifies the associated vulnerability is fixed
    
@@ -14462,11 +14461,10 @@ svc_backup   : Backup@123`
           "At their best, ASM and VM aren't separate programs — they're a continuous pipeline. ASM continuously discovers and inventories your attack surface. VM continuously assesses that surface for vulnerabilities, prioritises findings based on risk, and tracks remediation. The output of ASM feeds directly into VM, and VM's findings inform which parts of the attack surface need the most attention.",
           "Here's what that integrated pipeline looks like in practice. ASM detects a new subdomain — dev-api.target.com — on a Tuesday morning. Automated HTTP probing determines it's running an old version of Spring Boot. That finding triggers a targeted Nuclei scan, which detects CVE-2022-22965 (Spring4Shell). The CVE is on the CISA KEV list. An automated Jira ticket is created with critical priority and a 24-hour SLA. An alert fires in the security Slack channel. The developer who owns the service gets paged. By Wednesday morning, the service is patched. Automated verification confirms the fix. The ticket is closed, and the MTTR metric for critical KEV vulnerabilities moves in the right direction.",
           "That pipeline requires investment — in tooling, in automation, in the integrations that connect your ASM data to your VM data to your ticketing system to your alerting system. But once it's running, it operates largely without manual intervention, freeing your security team to focus on the genuinely hard problems that automation can't solve.",
+          "An integrated ASM + VM pipeline transforms point-in-time security assessments into a continuously operating risk reduction engine.",
         ],
         imagePlaceholder: {
-          src: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",
-          caption:
-            "An integrated ASM + VM pipeline transforms point-in-time security assessments into a continuously operating risk reduction engine.",
+          src: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",           
           alt: "Security operations center with multiple monitors showing network data",
         },
       },
