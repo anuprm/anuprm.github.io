@@ -14726,9 +14726,9 @@ function ImgPlaceholder({ caption, src }) {
         className: "font-mono text-xs text-center mt-2 px-6",
         style: { color: "var(--text-subtle)" },
         children: [
-          "[ ",
+          " ",
           caption,
-          " ]"
+          " "
         ]
       }
     )
