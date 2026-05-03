@@ -13637,7 +13637,6 @@ svc_backup   : Backup@123`
         ],
         imagePlaceholder: {
           src: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
-          alt: "Server room with network cables representing complex attack surfaces",
         },
         paragraphs: [
           "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated."
