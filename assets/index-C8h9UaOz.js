@@ -13662,7 +13662,7 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          caption: "Subdomain Enumeration with Subfinder + Passive DNS",
+          title: "Subdomain Enumeration with Subfinder + Passive DNS",
           code: `# Install subfinder
   go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
    
@@ -13688,7 +13688,7 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          caption: "Certificate Transparency Log Mining",
+          title: "Certificate Transparency Log Mining",
           code: `# Query crt.sh for a domain
   curl -s "https://crt.sh/?q=%.target.com&output=json" | \\
     jq -r '.[].name_value' | \\
@@ -13718,7 +13718,7 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          caption: "Active DNS Enumeration with PureDNS",
+          title: "Active DNS Enumeration with PureDNS",
           code: `# Install puredns
   go install github.com/d3mondev/puredns/v2@latest
    
@@ -13864,7 +13864,7 @@ svc_backup   : Backup@123`
       },
       {
         imagePlaceholder: {
-          url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1100&auto=format&fit=crop&q=80",
+          src: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1100&auto=format&fit=crop&q=80",
           caption:
             "Attack surface discovery involves layering multiple data sources — passive DNS, CT logs, Shodan, and active scanning — to build a complete picture of externally exposed assets.",
           alt: "Matrix-style code visualization representing network reconnaissance",
@@ -13984,7 +13984,7 @@ svc_backup   : Backup@123`
           "Here's the uncomfortable truth that most VM vendors won't tell you: the average enterprise has tens of thousands of open vulnerabilities at any given time. You will never fix all of them. The question isn't 'how do we fix everything?' — it's 'how do we fix the things that matter, fast enough to make a difference?' That reframe is the most important mental shift in modern VM.",
         ],
         imagePlaceholder: {
-          url: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=1100&auto=format&fit=crop&q=80",
+          src: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=1100&auto=format&fit=crop&q=80",
           caption:
             "The vulnerability management lifecycle: Discover → Assess → Prioritise → Remediate → Verify. Most programs are strong on the first two and weak on the last three.",
           alt: "Circular lifecycle diagram representing vulnerability management stages",
@@ -14464,7 +14464,7 @@ svc_backup   : Backup@123`
           "That pipeline requires investment — in tooling, in automation, in the integrations that connect your ASM data to your VM data to your ticketing system to your alerting system. But once it's running, it operates largely without manual intervention, freeing your security team to focus on the genuinely hard problems that automation can't solve.",
         ],
         imagePlaceholder: {
-          url: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",
+          src: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",
           caption:
             "An integrated ASM + VM pipeline transforms point-in-time security assessments into a continuously operating risk reduction engine.",
           alt: "Security operations center with multiple monitors showing network data",
