@@ -13625,7 +13625,7 @@ svc_backup   : Backup@123`
       "A comprehensive breakdown of how modern security teams identify, track, and eliminate weaknesses across their digital estate. Covering ASM methodology, vulnerability lifecycle, tooling, and real-world command-line workflows — the way practitioners actually do it.",
     date: "May 2026",
     readTime: "20 min read",
-    imagePlaceholder: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80",
+    imagePlaceholder: { src:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80"},
     tags: ["ASM", "Vulnerability Management", "Red Team", "Recon", "Nmap", "Nuclei", "CVSS"],
     sections: [
       {
@@ -13636,7 +13636,7 @@ svc_backup   : Backup@123`
           "This writeup is a practitioner's guide. I'm going to cover the theory where it matters, but mostly I want to walk through real workflows — the kind that show up in actual red team engagements and internal security programs. You'll see real tool outputs, real commands, and the messy thinking that happens when you're trying to figure out what your organisation actually looks like from an attacker's perspective.",
         ],
         imagePlaceholder: {
-          url: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
+          src: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
           caption:
             "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated.",
           alt: "Server room with network cables representing complex attack surfaces",
@@ -13662,8 +13662,8 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          label: "Subdomain Enumeration with Subfinder + Passive DNS",
-          snippet: `# Install subfinder
+          caption: "Subdomain Enumeration with Subfinder + Passive DNS",
+          code: `# Install subfinder
   go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
    
   # Basic subdomain enumeration with API keys configured
@@ -13688,8 +13688,8 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          label: "Certificate Transparency Log Mining",
-          snippet: `# Query crt.sh for a domain
+          caption: "Certificate Transparency Log Mining",
+          code: `# Query crt.sh for a domain
   curl -s "https://crt.sh/?q=%.target.com&output=json" | \\
     jq -r '.[].name_value' | \\
     sed 's/\\*\\.//g' | \\
@@ -13718,8 +13718,8 @@ svc_backup   : Backup@123`
         ],
         codeBlock: {
           language: "bash",
-          label: "Active DNS Enumeration with PureDNS",
-          snippet: `# Install puredns
+          caption: "Active DNS Enumeration with PureDNS",
+          code: `# Install puredns
   go install github.com/d3mondev/puredns/v2@latest
    
   # Brute-force subdomains with a wordlist
