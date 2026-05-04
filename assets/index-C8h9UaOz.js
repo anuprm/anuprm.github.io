@@ -13662,9 +13662,9 @@ const writeups = [
   cat employees.txt | while read line; do
     fname=$(echo $line | awk '{print tolower($1)}')
     lname=$(echo $line | awk '{print tolower($2)}')
-    echo "${fname}.${lname}@targetcorp.com"
-    echo "${fname}${lname}@targetcorp.com"
-    echo "${fname:0:1}${lname}@targetcorp.com"
+    echo "\${fname}.\${lname}@targetcorp.com"
+    echo "\${fname}\${lname}@targetcorp.com"
+    echo "\${fname:0:1}\${lname}@targetcorp.com"
   done > candidate_emails.txt
   
   # Validate which addresses actually exist (SMTP enumeration)
