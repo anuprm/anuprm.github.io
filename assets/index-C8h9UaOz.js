@@ -13547,9 +13547,9 @@ const writeups = [
   {
     id: "pentest-e2e-engagement-2025",
     category: "PENETRATION TESTING",
-    categoryColor: "oklch(0.65 0.22 145)",
-    categoryBg: "oklch(0.65 0.22 145 / 0.1)",
-    categoryBorder: "oklch(0.65 0.22 145 / 0.3)",
+    categoryColor: "oklch(0.65 0.22 20)",
+    categoryBg: "oklch(0.65 0.22 20 / 0.1)",
+    categoryBorder: "oklch(0.65 0.22 20 / 0.3)",
     title: "End-to-End Penetration Testing Engagement: From Recon to Full Domain Compromise",
     excerpt:
       "A detailed walkthrough of a real-world black-box penetration test against a mid-sized enterprise environment. Starting from a single IP range and zero credentials, we chain together OSINT, external enumeration, initial access, lateral movement, privilege escalation, and full Active Directory compromise — documenting every tool, command, and decision along the way.",
@@ -13604,6 +13604,7 @@ const writeups = [
       },
       {
         heading: "3. Active Reconnaissance — Port Scanning & Service Enumeration",
+        
         paragraphs: [
           "With the passive picture painted, we move into active recon. This is where we start generating traffic that will appear in the client's logs. We've notified the SOC team that testing has begun (per the RoE), so any alerts they generate are useful feedback, not a problem.",
           "We run nmap in stages. The initial sweep is fast and wide — just finding live hosts and open ports. The second pass is deep and specific — running default scripts and version detection against every open port. We keep the timing conservative (T3) because we don't want to accidentally DoS anything and because slower scans produce more accurate results against rate-limited services.",
@@ -13691,7 +13692,7 @@ const writeups = [
         ],
         imagePlaceholder: {
           caption: "Fig 2: TruffleHog v3 scanning a GitHub org — verified secrets flagged with a green checkmark, each one traced to the exact commit hash, file path, and line number",
-          src: "https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/assets/trufflehog3.gif",
+          src: "https://camo.githubusercontent.com/89e2214944f8282f90c4cca2a5a642a83e7fbdd97c818cf788a745a774413370/68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f74727566666c652d64656d6f732f6e6f6e2d696e7465726163746976652e737667",
         },
       },
       {
@@ -13827,7 +13828,7 @@ const writeups = [
         },
         imagePlaceholder: {
           caption: "Fig 3: LinPEAS color-coded output — critical PE vectors highlighted in red/yellow. World-readable /etc/shadow and a writable root cron script both flagged with 99% confidence ratings.",
-          src: "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/linPEAS/images/linpeas.png",
+          src: "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/linPEAS/images/peass.png",
         },
       },
       {
@@ -13892,7 +13893,7 @@ const writeups = [
         ],
         imagePlaceholder: {
           caption: "Fig 4: BloodHound CE mapping Active Directory attack paths — nodes in red are Tier Zero assets (Domain Controllers, krbtgt), edges represent abusable relationships like GenericWrite, AdminTo, and HasSession",
-          src: "https://raw.githubusercontent.com/SpecterOps/BloodHound/refs/heads/main/packages/go/ein/testdata/OriginalADCSPKI.png",
+          src: "https://specterops.io/wp-content/uploads/sites/3/2024/01/1Fo_1HbrrWu3cw0VBUV3nNA.png",
         },
         codeBlock: {
           language: "bash",
@@ -13946,7 +13947,7 @@ const writeups = [
         ],
         imagePlaceholder: {
           caption: "Fig 5: Hashcat cracking Kerberoast hashes (mode 13100) — svc_backup falls in 4 minutes, svc_sql in 17. An RTX 4090 runs through roughly 1.8 billion RC4 candidates per second.",
-          src: "https://hashcat.net/img/hashcat.png",
+          src: "https://cybersecurity.bureauveritas.com/uploads/media/_fit1440x1000/19487/crack-ticket.webp",
         },
       },
       {
@@ -14013,7 +14014,7 @@ const writeups = [
         },
         imagePlaceholder: {
           caption: "Fig 6: CrackMapExec Pass-the-Hash sweep across the internal /24 — green 'Pwn3d!' rows indicate local admin access achieved. 31 of 47 hosts compromised in a single sweep.",
-          src: "https://raw.githubusercontent.com/Porchetta-Industries/CrackMapExec/master/docs/cme.gif",
+          src: "https://miro.medium.com/v2/resize:fit:1400/1*-7jq9ZXmA6A32QAgUb8t1Q.png",
         },
       },
       {
@@ -14071,7 +14072,7 @@ const writeups = [
         },
         imagePlaceholder: {
           caption: "Fig 7: Impacket's secretsdump.py executing a DCSync attack — all domain hashes stream out including krbtgt and Administrator. Time from initial Tomcat shell to Domain Admin: 3 days, 6 hours.",
-          src: "https://raw.githubusercontent.com/fortra/impacket/refs/heads/master/README.md",
+          src: "https://www.bordergate.co.uk/wp-content/uploads/2019/03/impacket-secretsdump-ntds-ntds-dit-system-system.png",
         },
       },
       {
