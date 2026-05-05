@@ -13545,7 +13545,7 @@ function Skills() {
 }
 const writeups = [
   {
-    id: "pentest-e2e-engagement-2025",
+    id: "pentest-e2e-engagement",
     category: "PENETRATION TESTING",
     categoryColor: "oklch(0.65 0.22 20)",
     categoryBg: "oklch(0.65 0.22 20 / 0.1)",
@@ -13566,10 +13566,7 @@ const writeups = [
       },
       {
         heading: "2. Passive Reconnaissance — Building the Target Profile",
-        paragraphs: [
-          "Passive recon is where patience pays off. The goal is to map the client's external footprint without touching their infrastructure at all — which means everything we learn comes from public sources. This phase typically yields the most valuable intelligence per hour of work.",
-          "We start with the Whois record and DNS history. Tools like SecurityTrails, Shodan, Censys, and OSINT Framework give us a layered picture. We look for historical DNS entries (which often reveal decommissioned but still-live infrastructure), certificate transparency logs (which expose internal hostnames and staging environments), and email headers from publicly available correspondence (which can leak internal IP ranges and mail server details).",
-        ],
+        paragraphs: [ ],
         codeBlock: {
           language: "bash",
           code: `# Enumerate subdomains via certificate transparency logs
@@ -13594,12 +13591,14 @@ const writeups = [
   # Output: 312 subdomains_final.txt`,
         },
         paragraphs: [
+          "Passive recon is where patience pays off. The goal is to map the client's external footprint without touching their infrastructure at all — which means everything we learn comes from public sources. This phase typically yields the most valuable intelligence per hour of work.",
+          "We start with the Whois record and DNS history. Tools like SecurityTrails, Shodan, Censys, and OSINT Framework give us a layered picture. We look for historical DNS entries (which often reveal decommissioned but still-live infrastructure), certificate transparency logs (which expose internal hostnames and staging environments), and email headers from publicly available correspondence (which can leak internal IP ranges and mail server details).",
           "312 subdomains is a rich attack surface. We now resolve all of them to IPs and separate the in-scope from the out-of-scope. Several interesting patterns emerge: a Jenkins CI instance at ci.targetcorp.com, a Confluence wiki at wiki.targetcorp.com, a staging API at api-staging.targetcorp.com, and — most intriguingly — vpn.targetcorp.com which we'll come back to.",
           "Shodan and Censys enumerate open ports and service banners across the /24 without us sending a single packet from our own IP. We find several hosts running outdated TLS versions, a couple of exposed admin panels, and one particularly interesting host running a Citrix NetScaler with a banner that reveals its exact firmware version.",
         ],
         imagePlaceholder: {
-          caption: "Fig 1: Amass subdomain enumeration in action — discovering 312 subdomains across passive OSINT sources, certificate transparency logs, and DNS brute-forcing",
-          src: "https://raw.githubusercontent.com/owasp-amass/amass/master/images/amass_video.gif",
+          caption: " ",
+          src: "https://pentescope.com/wp-content/uploads/2024/09/passive-1024x640-1024x585.jpg",
         },
       },
       {
