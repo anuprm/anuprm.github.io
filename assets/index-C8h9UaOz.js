@@ -15024,88 +15024,1014 @@ const writeups = [
     ],
   },
   {
-    id: "full-kill-chain",
-    category: "RED TEAM",
-    categoryColor: "oklch(0.82 0.15 142)",
-    categoryBg: "oklch(0.82 0.15 142 / 0.1)",
-    categoryBorder: "oklch(0.82 0.15 142 / 0.3)",
-    title: "From Phishing to Domain Admin: A Full Kill Chain Walkthrough",
-    excerpt: "A simulated red team engagement starting with a spear-phishing campaign, escalating through credential harvesting and lateral movement, ending in full domain compromise. Covers tooling, opsec considerations, and blue team detection gaps identified throughout.",
-    date: "Nov 2024",
-    readTime: "25 min read",
+    id: "osint-deep-dive-2025",
+    category: "OSINT",
+    categoryColor: "oklch(0.72 0.17 160)",
+    categoryBg: "oklch(0.72 0.17 160 / 0.1)",
+    categoryBorder: "oklch(0.72 0.17 160 / 0.3)",
+    title: "OSINT Deep Dive: From Zero to Full Target Profile — A Practitioner's Field Manual",
+    excerpt:
+      "A practitioner-level walkthrough of Open Source Intelligence gathering — covering recon methodology, passive footprinting, social media profiling, infrastructure mapping, Google/GitHub dorks, and real-world toolchains. Whether you're doing red teaming, bug bounty recon, or threat intelligence, this is the playbook.",
+    date: "May 2025",
+    readTime: "35 min read",
     sections: [
       {
+        heading: "What Is OSINT and Why Does It Still Dominate Recon?",
         paragraphs: [
-          "This report documents a full-scope red team engagement against a mid-size financial services firm. The rules of engagement permitted phishing, physical access attempts, and full Active Directory exploitation. The engagement ran for 3 weeks and resulted in complete domain compromise. All findings were responsibly disclosed with remediation guidance."
-        ]
-      },
-      {
-        heading: "Phase 1: Reconnaissance",
-        paragraphs: [
-          "OSINT collection used LinkedIn, Hunter.io, and Google dorking to identify 12 target employees in finance and IT, their email naming convention (firstname.lastname@corp.com), the company's primary SaaS tools, and a publicly accessible Jenkins instance at jenkins.corp.com. No active scanning was performed at this stage to avoid triggering IDS."
-        ]
-      },
-      {
-        heading: "Phase 2: Initial Access",
-        paragraphs: [
-          "A spear-phishing campaign targeting 5 finance employees used Evilginx2 to proxy the corporate Office 365 login, capturing both credentials and session cookies to bypass MFA. Three employees clicked; one submitted credentials. The captured session cookie granted full O365 access:"
+          "Open Source Intelligence — OSINT — is the art and science of collecting, correlating, and analysing information that is freely available to the public. No exploits. No zero-days. No illegal access. Just the internet, a browser, and the right methodology. Yet time and again, OSINT proves to be the most underestimated phase of any offensive security engagement.",
+          "I've been doing red team engagements for years, and I can count on one hand the number of times we needed a sophisticated exploit to get initial access. The overwhelming majority of the time, the way in was through a leaked credential on a paste site, an employee's LinkedIn profile revealing their internal tools, or a misconfigured S3 bucket that a GitHub commit pointed to. OSINT gave us all of that — before we touched a single target system.",
+          "This write-up is my attempt to consolidate everything I know about OSINT into one structured field manual. We're going to go through reconnaissance methodology from first principles, then get into the actual tools, commands, dorks, and workflows I use on real engagements. No fluff, no surface-level tool lists. If you're looking for a comprehensive, practical reference — this is it.",
         ],
-        codeBlock: {
-          language: "bash",
-          code: `# Evilginx2 phishlet — O365
-lures create o365
-lures get-url 0
-# URL: https://login.secure-corp365.com/xyz123
-
-# Captured session token from victim (30 mins after sending lure):
-[*] Phishlet 'o365' caught credentials:
-    Username: j.smith@corp.com
-    Password: Summer2024!
-    Token: eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...  (truncated)
-
-# Replaying token in browser granted full O365 access
-# — bypassed Duo MFA completely`
-        },
+      },
+      {
+        heading: "The OSINT Mindset: Think Like an Analyst, Not a Script Kiddie",
+        paragraphs: [
+          "The biggest mistake beginners make is treating OSINT as a checklist of tools to run. They download Maltego, run theHarvester against a domain, dump the results into a text file, and call it recon. That's not OSINT — that's noise generation.",
+          "Real OSINT is about structured thinking. You have a target, a question, and a hypothesis. You collect data, validate it, correlate it across sources, and produce intelligence — information that is actionable and contextual. The difference between data and intelligence is analysis.",
+          "Before you run a single command, you should be asking: What am I trying to find out? Who is my target? What do I already know? What assumptions am I making? Intelligence analysts call this the Intelligence Cycle: Direction → Collection → Processing → Analysis → Dissemination. Apply it to every engagement, even bug bounty recon.",
+        ],
         imagePlaceholder: {
-          caption: "fig 1: Cobalt Strike beacon — domain-fronted C2 traffic in Wireshark",
-          src: "/assets/generated/cobalt-strike-c2-traffic.dim_800x400.png"
-        }
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Intelligence_cycle_security.jpg/800px-Intelligence_cycle_security.jpg",
+          alt: "The Intelligence Cycle — Direction, Collection, Processing, Analysis, Dissemination",
+        },
       },
       {
-        heading: "Phase 3: Lateral Movement",
+        heading: "Phase 1: Passive Reconnaissance — Footprinting Without Touching the Target",
         paragraphs: [
-          "A misconfigured Jenkins instance exposed to the VPN network allowed unauthenticated script execution. We deployed a Cobalt Strike beacon over HTTPS with domain-fronting through a reputable CDN, blending C2 traffic with legitimate corporate traffic. From there, Mimikatz extracted NTLM hashes from LSASS memory:"
+          "Passive recon is the golden phase. You're gathering information about the target without sending a single packet to their infrastructure. This keeps you invisible and is almost always legal when done against public data. The goal here is to build a complete picture of the target's external attack surface.",
+          "Start with the basics: the domain. Everything else radiates outward from there. Who registered it? When? What nameservers are they using? What's their email infrastructure? What subdomains can you enumerate without brute-forcing? What certificates have they issued? Let's walk through this systematically.",
+        ],
+      },
+      {
+        heading: "WHOIS & Domain Intelligence",
+        paragraphs: [
+          "WHOIS is old but it's still relevant. Even with GDPR redaction, registrar and nameserver data often leaks organizational affiliations, date patterns, and registrar preferences. When a company registers 50 domains with the same registrar, on the same day, using the same nameservers — those are sister domains, and you'd never know without pulling WHOIS records at scale.",
+          "Tools like whois, DomainTools, and ViewDNS.info are your starting points. For bulk WHOIS pivoting, I use the SecurityTrails API — it lets you search by historical nameserver, registrant email, or registrant org to find all domains connected to a target entity. This is how you discover shadow IT and forgotten acquisition domains.",
         ],
         codeBlock: {
           language: "bash",
-          code: `# Pass-the-Hash with CrackMapExec
-crackmapexec smb 10.10.0.0/24 -u administrator -H aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0
-
-SMB  10.10.0.14  445  WS04   [+] CORP\\administrator (Pwn3d!)
-SMB  10.10.0.21  445  WS07   [+] CORP\\administrator (Pwn3d!)
-SMB  10.10.0.33  445  WS12   [+] CORP\\administrator (Pwn3d!)
-SMB  10.10.0.41  445  SRV02  [+] CORP\\administrator (Pwn3d!)
-SMB  10.10.0.50  445  DC01   [+] CORP\\administrator (Pwn3d!)`
-        }
+          code: `# Basic WHOIS lookup
+  whois target.com
+  
+  # WHOIS for an IP address — get the ASN, org, and CIDR range
+  whois 93.184.216.34
+  
+  # SecurityTrails CLI — pivot by registrant email
+  # Install: pip install securitytrails
+  st domains --registrant-email admin@target.com
+  
+  # Find all domains registered by the same organization
+  st domains --registrant-org "Target Corporation"
+  
+  # Reverse WHOIS via ViewDNS (manual or via API)
+  curl "https://api.viewdns.info/reversewhois/?q=admin@target.com&apikey=YOURAPIKEY&output=json"
+  
+  # Check historical WHOIS data (great for uncovering redacted registrant info)
+  domaintools whois --history target.com`,
+        },
       },
       {
-        heading: "Phase 4: Domain Compromise",
+        heading: "Certificate Transparency Logs — The Subdomain Gold Mine",
         paragraphs: [
-          "BloodHound analysis revealed a clear path to Domain Admin through a chain of three misconfigured Kerberos delegations. Using the compromised administrator hash and a DCSync attack via secretsdump.py, we extracted all 847 domain hashes. Full domain compromise was achieved in 18 hours from initial phishing email to DA. The KRBTGT hash was delivered to the client for proof of impact."
-        ]
+          "Certificate Transparency (CT) logs are publicly auditable records of every TLS certificate ever issued by a participating CA. Since virtually every HTTPS service needs a certificate, CT logs are an incredible passive source for subdomain enumeration. You're not brute-forcing anything — you're querying a public log that the target's own certificates wrote to.",
+          "The best part? CT logs capture wildcard certs, SAN entries, and even internal-looking subdomains that accidentally got public certificates. I've found staging environments, internal APIs, and developer tools this way that were never meant to be public-facing.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/TLS_1.3_Handshake.svg/800px-TLS_1.3_Handshake.svg.png",
+          alt: "TLS 1.3 Handshake — every certificate issued during this process gets logged publicly in CT logs",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# Query crt.sh directly for all subdomains via CT logs
+  curl -s "https://crt.sh/?q=%.target.com&output=json" | jq -r '.[].name_value' | sort -u
+  
+  # Strip wildcards and deduplicate cleanly
+  curl -s "https://crt.sh/?q=%.target.com&output=json" \\
+    | jq -r '.[].name_value' \\
+    | sed 's/\\*\\.//g' \\
+    | sort -u \\
+    | grep -v "^$"
+  
+  # subfinder — aggregates CT logs + other passive sources
+  # Install: go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+  subfinder -d target.com -o subdomains.txt -all -recursive
+  
+  # amass — comprehensive subdomain enum with CT log support
+  amass enum -passive -d target.com -o amass_output.txt
+  
+  # CertSpotter API — another CT log aggregator
+  curl -s "https://api.certspotter.com/v1/issuances?domain=target.com&include_subdomains=true&expand=dns_names" \\
+    | jq -r '.[].dns_names[]' | sort -u
+  
+  # tlsx — fast TLS probe that pulls SAN entries
+  echo "target.com" | tlsx -san -cn -silent | grep "target.com" | sort -u`,
+        },
       },
       {
-        heading: "Gaps Identified",
-        list: [
-          "No EDR deployed on 23 legacy Windows 7 workstations still in use",
-          "Excessive local admin rights: 78% of workstations shared identical local admin credentials",
-          "No anomaly detection on VPN authentication — Evilginx2 activity went undetected",
-          "Jenkins exposed to internal VPN with no authentication required",
-          "LSASS not protected by Credential Guard on any domain-joined host",
-          "No alerting on BloodHound-style LDAP queries from non-admin accounts"
-        ]
-      }
-    ]
+        heading: "DNS Reconnaissance — Reading the Map",
+        paragraphs: [
+          "DNS is one of the most information-dense sources available to an OSINT researcher. A target's DNS records tell you about their email security posture (SPF, DKIM, DMARC), their infrastructure providers (MX, NS records), their CDN usage, and sometimes even internal hostnames that got accidentally published.",
+          "Zone transfers are mostly dead — but you'd be surprised how often admins still leave them misconfigured, so always try. Beyond that, passive DNS databases like CIRCL, PassiveTotal, and Shodan's DNS feature give you a historical view of what records looked like in the past. That historical data is invaluable: a company's A record might point to a cloud provider now, but six months ago it pointed to their old data center's IP — and that IP might still be running the same services.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Example_of_an_iterative_DNS_resolver.svg/800px-Example_of_an_iterative_DNS_resolver.svg.png",
+          alt: "Iterative DNS resolution flow — understanding the chain from root to authoritative nameserver",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# Full DNS enumeration with dnsx
+  dnsx -d target.com -a -aaaa -mx -ns -txt -cname -ptr -silent
+  
+  # Check for zone transfer vulnerability (always worth trying)
+  dig axfr @ns1.target.com target.com
+  dig axfr @ns2.target.com target.com
+  
+  # dnsrecon — comprehensive DNS recon swiss army knife
+  dnsrecon -d target.com -t std
+  dnsrecon -d target.com -t axfr          # Zone transfer attempt
+  dnsrecon -d target.com -t brt -D /usr/share/wordlists/subdomains.txt
+  
+  # fierce — DNS brute force + zone walk
+  fierce --domain target.com --subdomains /usr/share/wordlists/fierce/hosts.txt
+  
+  # Check SPF, DKIM, DMARC to infer email security posture
+  dig txt target.com | grep -E "v=spf|DKIM|DMARC"
+  dig txt _dmarc.target.com
+  
+  # Historical DNS via SecurityTrails API
+  curl -H "apikey: YOUR_API_KEY" \\
+    "https://api.securitytrails.com/v1/history/target.com/dns/a" \\
+    | jq '.records[].values[].ip'
+  
+  # Passive DNS with CIRCL
+  curl "https://www.circl.lu/pdns/query/target.com" -H "Accept: application/json"
+  
+  # Find all IP ranges an org owns via ASN lookup
+  whois -h whois.radb.net -- '-i origin AS12345' | grep route`,
+        },
+      },
+      {
+        heading: "Phase 2: Google Dorking — The Dark Art of Search Engine OSINT",
+        paragraphs: [
+          "Google Dorking (also called Google Hacking) is the use of advanced search operators to find information that isn't easily discoverable through normal search queries. Google indexes everything — login panels, configuration files, directory listings, exposed databases, and confidential documents — if you know how to ask for it.",
+          "The Google Hacking Database (GHDB), maintained by Exploit-DB, is the authoritative reference for dorks. But understanding the operators themselves is more valuable than memorising specific dork strings. Let me break down the operators you actually need, and then show you how to combine them for real recon scenarios.",
+          "One important note: Google rate-limits and sometimes CAPTCHAs aggressive queries. Use a VPN, rotate queries, or use tools like pagodo that automate GHDB dorks while being rate-limit aware. Bing and DuckDuckGo have similar operators and are often less aggressive with rate limiting.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/800px-Google_2015_logo.svg.png",
+          alt: "Google — the most powerful passive OSINT engine when wielded with advanced search operators",
+        },
+      },
+      {
+        heading: "Google Dork Operators — Master Reference",
+        paragraphs: [
+          "These are the operators you need to internalise. Mix and match them — the real power comes from combinations, not individual operators.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── CORE OPERATORS ────────────────────────────────────────────────────────
+  
+  site:target.com                         # Restrict results to a specific domain
+  site:target.com -www                    # Exclude the www subdomain
+  site:*.target.com                       # All subdomains
+  
+  intitle:"index of"                      # Directory listings (open file browsers)
+  intitle:"index of" site:target.com     # Directory listings on target
+  intitle:"phpinfo()"                     # Exposed PHP info pages
+  
+  inurl:admin site:target.com            # Admin panels
+  inurl:login site:target.com            # Login pages
+  inurl:.git site:target.com             # Exposed .git directories
+  inurl:config site:target.com           # Config endpoints
+  
+  intext:"password" filetype:txt         # Text files containing "password"
+  intext:"mongodb" intext:"27017"        # Exposed MongoDB references
+  
+  filetype:pdf site:target.com           # PDFs on target domain
+  filetype:xls site:target.com          # Excel files (often contain sensitive data)
+  filetype:sql                           # SQL dumps indexed by Google
+  filetype:log inurl:access             # Exposed access log files
+  filetype:env                           # .env files — credential goldmine
+  filetype:bak                           # Backup files left publicly accessible
+  
+  # ─── SENSITIVE FILE DISCOVERY ────────────────────────────────────────────────
+  
+  site:target.com filetype:pdf confidential
+  site:target.com filetype:xls password
+  site:target.com ext:conf OR ext:config OR ext:cfg
+  site:target.com ext:log
+  site:target.com ext:bak OR ext:old OR ext:backup
+  
+  # ─── EXPOSED MANAGEMENT PANELS ──────────────────────────────────────────────
+  
+  intitle:"Kibana" site:target.com
+  intitle:"Grafana" site:target.com
+  intitle:"phpMyAdmin" site:target.com
+  intitle:"Jenkins" site:target.com
+  inurl:8080 intitle:"Tomcat" site:target.com
+  inurl:9200 intitle:"Elasticsearch"
+  inurl:"/_cat/indices" "target.com"
+  
+  # ─── CREDENTIAL LEAKS ON PASTE SITES ────────────────────────────────────────
+  
+  site:pastebin.com "target.com" password
+  site:pastebin.com "@target.com"
+  site:paste.ee OR site:dpaste.com "target.com"
+  
+  # ─── EMAIL HARVESTING ───────────────────────────────────────────────────────
+  
+  site:target.com "@target.com"
+  "@target.com" filetype:pdf
+  "@target.com" filetype:xls
+  "email" "@target.com" site:linkedin.com
+  
+  # ─── TECHNOLOGY FINGERPRINTING ──────────────────────────────────────────────
+  
+  site:target.com intext:"Powered by WordPress"
+  site:target.com intext:"Jira" OR intext:"Confluence"
+  site:target.com intitle:"Swagger UI"         # Exposed API documentation
+  site:target.com inurl:"/api/v1/"             # Live API endpoints
+  site:target.com inurl:"actuator"             # Spring Boot actuator endpoints
+  
+  # ─── EXPOSED CLOUD STORAGE ─────────────────────────────────────────────────
+  
+  site:s3.amazonaws.com "target"
+  site:storage.googleapis.com "target.com"
+  site:blob.core.windows.net "target"
+  
+  # ─── API KEY EXPOSURE ──────────────────────────────────────────────────────
+  
+  site:target.com "api_key" OR "apikey" OR "api-key"
+  site:target.com intext:"Authorization: Bearer"`,
+        },
+      },
+      {
+        heading: "Advanced Google Dork Combinations for Real Engagements",
+        paragraphs: [
+          "Single operators are entry-level. The real intelligence comes from chaining operators together. Here are the actual dork combinations I use during engagements — refined over years of real red team work.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── EXPOSED .env FILES (database/API credentials) ──────────────────────────
+  filetype:env "DB_PASSWORD" OR "AWS_SECRET" OR "API_KEY"
+  site:target.com filetype:env
+  
+  # ─── EXPOSED GIT REPOSITORIES ────────────────────────────────────────────────
+  intitle:"Index of /.git" site:target.com
+  inurl:"/.git/config" site:target.com
+  inurl:"/.git/HEAD" site:target.com
+  
+  # ─── ADMIN & LOGIN INTERFACES ────────────────────────────────────────────────
+  site:target.com inurl:"/wp-admin"
+  site:target.com inurl:"/administrator" intitle:"Joomla"
+  site:target.com inurl:"/phpmyadmin"
+  site:target.com intitle:"Login" inurl:"/admin"
+  
+  # ─── CREDENTIALS BURIED IN DOCUMENTS ────────────────────────────────────────
+  site:target.com filetype:pdf "confidential" "password"
+  site:target.com filetype:xlsx "username" "password"
+  site:target.com filetype:docx "VPN" "credentials"
+  
+  # ─── NETWORK DEVICE MANAGEMENT INTERFACES ───────────────────────────────────
+  site:target.com intitle:"Cisco" "level 15 access"
+  site:target.com intitle:"Fortinet" inurl:"/remote/login"
+  site:target.com intitle:"RouterOS" inurl:"winbox"
+  
+  # ─── PAGODO — AUTOMATE ALL GHDB DORKS AGAINST A TARGET ──────────────────────
+  # Install: git clone https://github.com/opsdisk/pagodo
+  # Fetches the full GHDB and runs all dorks with configurable rate limits
+  python3 pagodo.py -d target.com -g dorks.txt -l 50 -s -e 35.0 -j 1.1`,
+        },
+      },
+      {
+        heading: "Phase 3: GitHub & Code Repository Dorking",
+        paragraphs: [
+          "GitHub is arguably the most underestimated source of sensitive information in modern OSINT. Developers commit secrets — API keys, passwords, private keys, connection strings, internal hostnames — all the time. And even after they delete the commit, GitHub's history preserves it forever unless explicitly purged with a force-push and garbage collection.",
+          "I've found AWS root credentials, Stripe API keys, internal Slack tokens, and VPN configuration files on GitHub during red team engagements. These weren't intentional exposures — they were accidents that never got cleaned up. Your job as an OSINT researcher is to find them before the adversary does.",
+          "Beyond secrets, GitHub code search lets you find how a target builds their software, what internal tools they use, what CI/CD pipelines look like, and sometimes even architecture diagrams in READMEs. It's a goldmine of attack surface intelligence.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/600px-GitHub_Invertocat_Logo.svg.png",
+          alt: "GitHub — one of the richest unintentional sources of leaked secrets and internal infrastructure details",
+        },
+      },
+      {
+        heading: "GitHub Dorks — The Complete Playbook",
+        paragraphs: [
+          "GitHub's advanced code search supports powerful operators. The key operators are org:, user:, filename:, extension:, path:, and language:. Combine them with sensitive keywords to surgically find exposed material across an organisation's entire codebase.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── SEARCH WITHIN A SPECIFIC ORGANISATION ──────────────────────────────────
+  org:targetcompany password
+  org:targetcompany "api_key"
+  org:targetcompany "secret"
+  org:targetcompany "private_key"
+  
+  # ─── SEARCH BY FILENAME ──────────────────────────────────────────────────────
+  filename:.env password
+  filename:config.yml password
+  filename:docker-compose.yml password
+  filename:terraform.tfvars secret
+  filename:id_rsa                         # Private SSH keys
+  filename:.npmrc _authToken              # NPM registry tokens
+  filename:*.pem                          # PEM certificates and private keys
+  
+  # ─── SEARCH BY FILE EXTENSION ────────────────────────────────────────────────
+  extension:env DB_PASSWORD
+  extension:json "aws_secret_access_key"
+  extension:yml password
+  extension:sql "INSERT INTO users"       # Database dumps with user records
+  extension:log password
+  
+  # ─── PATH-BASED SEARCHES ─────────────────────────────────────────────────────
+  path:/.ssh id_rsa
+  path:/config password
+  path:/.aws credentials
+  path:/secrets
+  
+  # ─── LANGUAGE-SPECIFIC PATTERNS ──────────────────────────────────────────────
+  language:Python "import boto3" "aws_secret_access_key"
+  language:JavaScript "process.env" "SECRET"
+  language:Shell "curl" "Authorization: Bearer"
+  
+  # ─── HIGH-VALUE COMBO DORKS ──────────────────────────────────────────────────
+  
+  # AWS credentials (AKIA prefix is always an AWS access key ID)
+  org:targetcompany "aws_access_key_id" "aws_secret_access_key"
+  "AKIA" filename:*.json
+  
+  # Database connection strings
+  org:targetcompany "mongodb+srv://"
+  org:targetcompany "postgresql://" password
+  org:targetcompany "redis://:password"
+  
+  # Slack tokens
+  org:targetcompany "xoxb-"              # Slack bot token
+  org:targetcompany "xoxp-"              # Slack user token
+  org:targetcompany "hooks.slack.com"    # Slack webhook URLs
+  
+  # Private keys
+  filename:*.pem "BEGIN RSA PRIVATE KEY"
+  filename:*.key "BEGIN PRIVATE KEY"
+  
+  # ─── AUTOMATED SECRET SCANNING ───────────────────────────────────────────────
+  
+  # trufflehog — scans full git history for verified secrets
+  trufflehog git https://github.com/targetcompany/repo --only-verified
+  trufflehog github --org=targetcompany --only-verified
+  
+  # gitleaks — detect secrets with regex rules
+  gitleaks detect --source /path/to/repo --verbose
+  gitleaks detect --source . -v --report-format json --report-path leaks.json
+  
+  # gitrob — aggregated GitHub OSINT for an org
+  # Install: go get github.com/michenriksen/gitrob
+  gitrob targetcompany`,
+        },
+      },
+      {
+        heading: "Phase 4: People Intelligence — Social Media & Identity Pivoting",
+        paragraphs: [
+          "Infrastructure recon tells you what systems exist. People recon tells you how to get into them. The most reliable path into an organisation is through its humans — through phishing, vishing, credential stuffing with leaked passwords, or social engineering. All of those attacks depend on knowing your targets.",
+          "LinkedIn is the single richest source of corporate people intelligence available. It tells you org structure, reporting lines, technology stacks (people list tools in their skills), email formats, and who the key decision-makers are. Instagram, Twitter/X, and Facebook fill in personal details that make social engineering compelling and believable.",
+          "The key skill in people OSINT is pivoting — using one piece of information to find the next. You find a name on LinkedIn, search that email format on HaveIBeenPwned, find a credential leak, pivot to their personal email, find their home address in a data broker record. Each pivot expands the intelligence picture.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/LinkedIn_icon.svg/400px-LinkedIn_icon.svg.png",
+          alt: "LinkedIn — the most information-rich public source for corporate people intelligence and org mapping",
+        },
+      },
+      {
+        heading: "Email Format Discovery & Harvesting",
+        paragraphs: [
+          "Before you can do anything useful with employee names, you need to know the email format the company uses. There are only a handful of common patterns, and multiple OSINT sources will confirm which one a company uses.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── EMAIL FORMAT DISCOVERY ─────────────────────────────────────────────────
+  
+  # Hunter.io — best single tool for email format discovery
+  curl "https://api.hunter.io/v2/domain-search?domain=target.com&api_key=YOUR_KEY"
+  
+  # Verify a specific combination
+  curl "https://api.hunter.io/v2/email-finder?domain=target.com&first_name=John&last_name=Doe&api_key=YOUR_KEY"
+  
+  # theHarvester — classic multi-source email harvesting
+  theHarvester -d target.com -b all -l 500 -f output.html
+  theHarvester -d target.com -b linkedin,google,bing,yahoo,github
+  
+  # h8mail — email breach lookup at scale
+  h8mail -t target@target.com                         # Single email
+  h8mail -t targets.txt --breach-src HIBP             # Bulk with HIBP
+  
+  # emailfinder — fast passive email discovery
+  # Install: go install github.com/Josue87/EmailFinder@latest
+  emailfinder -d target.com
+  
+  # Common email format patterns to test and validate:
+  # {first}.{last}@target.com      ← most common
+  # {first}@target.com
+  # {f}{last}@target.com
+  # {first}{last}@target.com
+  # {last}.{first}@target.com
+  
+  # ─── EMAIL VERIFICATION VIA SMTP ─────────────────────────────────────────────
+  
+  smtp-user-enum -M VRFY -U emails.txt -t mail.target.com
+  smtp-user-enum -M RCPT -U emails.txt -D target.com -t mail.target.com
+  
+  # ─── LINKEDIN TO USERNAME LIST ───────────────────────────────────────────────
+  
+  # linkedin2username — generate email usernames from LinkedIn
+  # Install: git clone https://github.com/initstring/linkedin2username
+  python3 linkedin2username.py -u yourlinkedin@email.com -c "Target Company Name"
+  
+  # CrossLinked — LinkedIn recon without authentication
+  # Install: pip install crosslinked
+  crosslinked -f '{first}.{last}@target.com' 'Target Company'
+  crosslinked -f '{f}{last}@target.com' 'Target Company'`,
+        },
+      },
+      {
+        heading: "Username & Identity Pivoting Across Platforms",
+        paragraphs: [
+          "Once you have a name or username, pivot across every platform. People reuse usernames constantly — the same handle on GitHub, Reddit, Twitter, and a gaming forum often belongs to the same person. That gaming forum profile from 2014 might have their real name, location, and photos that they'd never put on LinkedIn.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── USERNAME ENUMERATION ACROSS 300+ PLATFORMS ─────────────────────────────
+  
+  # sherlock — the classic username hunter
+  # Install: pip3 install sherlock-project
+  sherlock johndoe
+  sherlock johndoe --timeout 60 --output results.txt --csv
+  
+  # maigret — more comprehensive than sherlock, better reporting
+  # Install: pip3 install maigret
+  maigret johndoe
+  maigret johndoe --html report.html
+  
+  # socialscan — accurate existence check (no false positives)
+  # Install: pip install socialscan
+  socialscan johndoe --platforms twitter instagram github reddit
+  
+  # ─── PHONE NUMBER OSINT ──────────────────────────────────────────────────────
+  
+  # phoneinfoga — carrier, region, breach history, search engines
+  # Install: go install github.com/sundowndev/phoneinfoga/v2/cmd/phoneinfoga@latest
+  phoneinfoga scan -n +919876543210
+  phoneinfoga serve -p 8080               # Launch web UI
+  
+  # ─── GITHUB PROFILE INTELLIGENCE ────────────────────────────────────────────
+  
+  # GitHub API reveals email, company, blog, location on public profiles
+  curl -s https://api.github.com/users/targetusername \\
+    | jq '.email, .name, .company, .location, .blog'
+  
+  # Git commit history often leaks real email addresses
+  curl -s "https://api.github.com/repos/targetuser/repo/commits" \\
+    | jq -r '.[].commit.author.email' | sort -u
+  
+  # ─── REVERSE IMAGE SEARCH ───────────────────────────────────────────────────
+  
+  # PimEyes — best paid face recognition search engine
+  # FaceCheck.ID — free face search
+  # TinEye — non-face reverse image search
+  # Google Images — drag and drop for quick search
+  
+  # face_recognition — local offline face matching
+  pip install face_recognition
+  face_recognition known_faces/ unknown_photos/`,
+        },
+      },
+      {
+        heading: "Phase 5: Infrastructure OSINT — Mapping the Attack Surface",
+        paragraphs: [
+          "Now we move from people to machines. Infrastructure OSINT means mapping everything that's internet-exposed — IP ranges, ASNs, open ports, running services, technologies, and misconfigurations. The goal is to build a comprehensive picture of the target's external attack surface without touching their systems.",
+          "Shodan, Censys, and FOFA are your primary weapons here. These are passive scanning services that continuously scan the entire internet and index the results. You query their databases, not the target's systems. From these databases alone, you can find exposed databases, industrial control systems, misconfigured cloud storage, default credential panels, and much more.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Computer_network_diagram.svg/800px-Computer_network_diagram.svg.png",
+          alt: "Network infrastructure diagram — mapping the exposed internet-facing attack surface of an organisation",
+        },
+      },
+      {
+        heading: "Shodan Mastery — Querying the Internet's Attack Surface Database",
+        paragraphs: [
+          "Shodan calls itself 'the search engine for the internet of things', but it's really a continuous port scanner that indexes every internet-connected device's banners, certificates, and metadata. If it's open to the internet and runs a service, Shodan has probably seen it.",
+          "The real power of Shodan isn't individual queries — it's correlating multiple filters to find specific types of exposures. An org filter combined with a product filter and a country filter can surface every misconfigured device in a company's infrastructure in seconds.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── SHODAN CLI SETUP ────────────────────────────────────────────────────────
+  pip install shodan
+  shodan init YOUR_SHODAN_API_KEY
+  
+  # ─── CORE SEARCH QUERIES ────────────────────────────────────────────────────
+  
+  shodan search 'org:"Target Corporation"'        # By org name
+  shodan search 'hostname:target.com'             # By hostname/domain
+  shodan search 'net:203.0.113.0/24'              # By IP range (CIDR)
+  shodan search 'asn:AS12345'                     # By ASN
+  
+  # ─── TECHNOLOGY FINGERPRINTING ───────────────────────────────────────────────
+  
+  shodan search 'org:"Target Corporation" product:Apache'
+  shodan search 'org:"Target Corporation" http.title:"Dashboard [Jenkins]"'
+  shodan search 'org:"Target Corporation" product:Elastic port:9200'
+  shodan search 'org:"Target Corporation" product:MongoDB port:27017'
+  shodan search 'org:"Target Corporation" product:Redis port:6379'
+  shodan search 'org:"Target Corporation" http.title:"GlobalProtect"'
+  
+  # ─── CERTIFICATE-BASED PIVOTING ──────────────────────────────────────────────
+  
+  shodan search 'ssl.cert.subject.cn:"*.target.com"'
+  shodan search 'ssl.cert.subject.O:"Target Corporation"'
+  shodan search 'ssl.cert.expired:true org:"Target Corporation"'
+  
+  # ─── HIGH-VALUE EXPOSURES ────────────────────────────────────────────────────
+  
+  shodan search 'org:"Target Corporation" port:3389'   # Exposed RDP
+  shodan search 'org:"Target Corporation" port:22'     # Exposed SSH
+  shodan search 'org:"Target Corporation" tag:ics'     # Industrial control systems
+  shodan search 'org:"Target Corporation" product:"Cisco ASA"'
+  
+  # ─── BULK DOWNLOAD & FACET ANALYSIS ─────────────────────────────────────────
+  
+  # Download all results as JSON
+  shodan download --limit 10000 results 'org:"Target Corporation"'
+  shodan parse --fields ip_str,port,transport,hostnames results.json.gz > parsed.txt
+  
+  # Count and facet breakdown
+  shodan count 'org:"Target Corporation"'
+  shodan stats --facets port,product,os,country 'org:"Target Corporation"'
+  
+  # Full host details including history
+  shodan host 203.0.113.1
+  shodan host 203.0.113.1 --history`,
+        },
+      },
+      {
+        heading: "Censys & FOFA — Alternative Infrastructure Search Engines",
+        paragraphs: [
+          "Shodan is excellent, but no single source is complete. Censys takes a different approach — it does full protocol-level analysis rather than just banner grabbing, which means it captures more structured data about TLS configuration, certificate chains, and HTTP responses. FOFA is the Chinese equivalent with excellent coverage of Asian infrastructure.",
+          "Using multiple sources gives you more complete coverage. I typically start with Shodan for speed, cross-reference with Censys for certificate and TLS details, and use FOFA for any infrastructure that might be hosted in Asia-Pacific regions.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── CENSYS CLI ─────────────────────────────────────────────────────────────
+  pip install censys
+  censys config  # Enter API ID and Secret
+  
+  # Search hosts by domain and certificate CN
+  censys search "target.com" --index-type hosts
+  censys search 'services.tls.certificate.parsed.subject_dn: "CN=*.target.com"' --index-type hosts
+  
+  # Get all details for a specific IP
+  censys view 203.0.113.1 --index-type hosts
+  
+  # ─── CENSYS WEB INTERFACE DORKS ─────────────────────────────────────────────
+  # For use at search.censys.io
+  
+  services.tls.certificate.parsed.names: target.com
+  autonomous_system.name: "TARGET CORPORATION"
+  autonomous_system.asn: 12345
+  
+  # Exposed database ports within a CIDR
+  (ip: 203.0.113.0/24) AND services.port: 27017   -- MongoDB
+  (ip: 203.0.113.0/24) AND services.port: 5432    -- PostgreSQL
+  (ip: 203.0.113.0/24) AND services.port: 6379    -- Redis
+  
+  # ─── FOFA QUERIES (fofa.info) ────────────────────────────────────────────────
+  
+  domain="target.com"
+  org="Target Corporation"
+  title="Target Corp Internal Portal"
+  domain="target.com" && port="8080" && title="Jenkins"
+  domain="target.com" && (app="Elasticsearch" || app="Kibana")
+  
+  # ─── PYTHON: CORRELATE SHODAN + CENSYS ───────────────────────────────────────
+  
+  python3 << 'EOF'
+  import shodan, censys.hosts
+  
+  shodan_api = shodan.Shodan("YOUR_SHODAN_KEY")
+  censys_api = censys.hosts.CensysHosts(api_id="YOUR_ID", api_secret="YOUR_SECRET")
+  
+  results = shodan_api.search('org:"Target Corporation"', limit=100)
+  ips = set(r['ip_str'] for r in results['matches'])
+  print(f"Shodan: {len(ips)} IPs found")
+  
+  for ip in list(ips)[:10]:
+      try:
+          host = censys_api.view(ip)
+          ports = [s['port'] for s in host.get('services', [])]
+          print(f"{ip}: Censys ports = {ports}")
+      except Exception as e:
+          print(f"{ip}: Not in Censys")
+  EOF`,
+        },
+      },
+      {
+        heading: "Phase 6: Wayback Machine & Historical OSINT",
+        paragraphs: [
+          "The internet has memory. Even after a company takes down a page, removes a file, or changes their infrastructure, the Wayback Machine and other archiving services may have captured it. This historical data is incredibly valuable — it shows you what the target's infrastructure looked like before hardening, old employee names and directories, deprecated API endpoints that might still be active, and technology stacks that have been replaced.",
+          "I once recovered a complete internal employee directory from a company's Wayback Machine snapshots from 2019. The page had been taken down, but the archive preserved every name, title, and extension. That directory became the foundation for the entire people-based recon phase of the engagement.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Internet_Archive_logo_and_wordmark.svg/600px-Internet_Archive_logo_and_wordmark.svg.png",
+          alt: "Internet Archive — the Wayback Machine preserves website snapshots indefinitely, even after pages are taken down",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# ─── WAYBACK MACHINE CDX API ────────────────────────────────────────────────
+  
+  # Check if any snapshots exist for a URL
+  curl "https://archive.org/wayback/available?url=target.com"
+  
+  # Get every URL Wayback has ever crawled for a domain
+  curl "http://web.archive.org/cdx/search/cdx?url=*.target.com/*&output=text&fl=original&collapse=urlkey"
+  
+  # Filter for specific file types
+  curl "http://web.archive.org/cdx/search/cdx?url=*.target.com/*&output=text&fl=original&collapse=urlkey&filter=mimetype:application/pdf"
+  
+  # Filter for only HTTP 200 responses
+  curl "http://web.archive.org/cdx/search/cdx?url=*.target.com/*&output=text&fl=original&collapse=urlkey&filter=statuscode:200"
+  
+  # ─── WAYBACKURLS ─────────────────────────────────────────────────────────────
+  # Install: go install github.com/tomnomnom/waybackurls@latest
+  
+  waybackurls target.com | tee wayback_urls.txt
+  
+  # Find sensitive file extensions in the archive
+  cat wayback_urls.txt | grep -E "\\.(pdf|xlsx|docx|sql|env|bak|config|log)$"
+  
+  # Find old admin/API endpoints
+  cat wayback_urls.txt | grep -E "(admin|api|login|dashboard|config|backup)"
+  
+  # ─── GAU — GET ALL URLS ───────────────────────────────────────────────────────
+  # Combines Wayback + OTX + Common Crawl
+  # Install: go install github.com/lc/gau/v2/cmd/gau@latest
+  
+  gau target.com | tee all_urls.txt
+  
+  # ─── EXTRACT PARAMETERS FROM HISTORICAL URLS ─────────────────────────────────
+  # Reveals old parameter names that might still work on live endpoints
+  
+  cat wayback_urls.txt | grep "?" | cut -d"?" -f2 | tr "&" "\\n" | cut -d"=" -f1 | sort -u
+  
+  # ─── FIND HISTORICAL SUBDOMAINS FROM ARCHIVE ────────────────────────────────
+  
+  curl -s "http://web.archive.org/cdx/search/cdx?url=*.target.com&output=json&fl=original&collapse=urlkey&limit=50000" \\
+    | jq -r '.[] | .[0]' \\
+    | grep -oP '(?<=https?://)[^/]+' \\
+    | sort -u`,
+        },
+      },
+      {
+        heading: "Phase 7: Breach Data & Credential Intelligence",
+        paragraphs: [
+          "Breach data is among the most actionable intelligence you can have during a red team engagement. When a company's employees reuse passwords across services, credentials from LinkedIn, Adobe, or any of the thousands of other data breaches become potentially valid credentials for corporate VPNs, email, and internal portals.",
+          "HaveIBeenPwned is the clean, ethical entry point and is fully sanctioned for security research. For authorised red team work, additional sources like DeHashed, IntelX, and Snusbase aggregate breach data and make it searchable by email, username, password hash, IP, or domain. The intelligence value of knowing which employees have appeared in breaches is enormous for assessing real organisational risk.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Padlock-silver-green.svg/400px-Padlock-silver-green.svg.png",
+          alt: "Credential security — breach data reveals whether an organisation's employees are reusing compromised passwords",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# ─── HAVEIBEENPWNED API ──────────────────────────────────────────────────────
+  
+  # Check a single email address against all known breaches
+  curl "https://haveibeenpwned.com/api/v3/breachedaccount/target@target.com" \\
+    -H "hibp-api-key: YOUR_KEY" \\
+    -H "user-agent: YourApp"
+  
+  # Get all breaches associated with a domain (great for org-wide exposure view)
+  curl "https://haveibeenpwned.com/api/v3/breacheddomain/target.com" \\
+    -H "hibp-api-key: YOUR_KEY" \\
+    -H "user-agent: YourApp"
+  
+  # ─── H8MAIL — BREACH LOOKUP TOOL ─────────────────────────────────────────────
+  # Install: pip3 install h8mail
+  
+  h8mail -t target@target.com
+  h8mail -t emails.txt --breach-src HIBP,snusbase,dehashed
+  
+  # ─── DEHASHED API ────────────────────────────────────────────────────────────
+  # Search by domain — returns all leaked credentials for that domain
+  curl -H 'Accept: application/json' \\
+    -u "your@email.com:YOUR_API_KEY" \\
+    "https://api.dehashed.com/search?query=domain:target.com&size=100"
+  
+  # Search by specific email address
+  curl -H 'Accept: application/json' \\
+    -u "your@email.com:YOUR_API_KEY" \\
+    "https://api.dehashed.com/search?query=email:target@target.com"
+  
+  # ─── INTELX — INTELLIGENCE X ─────────────────────────────────────────────────
+  # Searches paste sites, dark web, and breach data simultaneously
+  
+  curl -X POST "https://2.intelx.io/intelligent/search" \\
+    -H "x-key: YOUR_API_KEY" \\
+    -H "Content-Type: application/json" \\
+    -d '{"term":"target.com","maxresults":100,"media":0,"sort":4,"terminate":[]}'`,
+        },
+      },
+      {
+        heading: "Phase 8: Metadata Extraction from Documents",
+        paragraphs: [
+          "Documents published by an organisation — PDFs, Word docs, images, spreadsheets — often contain hidden metadata that reveals internal details. Author names, software versions, internal path structures, machine names, GPS coordinates, creation dates. This metadata was never intended to be public, but it's right there in the file.",
+          "A PDF report published on a company's website might contain the name of the contractor who created it, their Windows username, the internal file path (revealing folder naming conventions and possibly server names), and the software version — which might be outdated and vulnerable. This is exactly the kind of intelligence that sharpens your social engineering and exploitation strategy.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/400px-PDF_file_icon.svg.png",
+          alt: "PDF files — commonly contain hidden metadata including author names, internal paths, and software versions",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# ─── METAGOOFIL — FIND AND EXTRACT METADATA AUTOMATICALLY ──────────────────
+  # Install: git clone https://github.com/opsdisk/metagoofil
+  
+  # Download all publicly indexed PDFs and extract their metadata
+  python3 metagoofil.py -d target.com -t pdf -l 100 -n 100 -o output/ -w results.html
+  
+  # Multiple file types at once
+  python3 metagoofil.py -d target.com -t pdf,doc,xls,ppt -l 200 -n 200 -o output/
+  
+  # ─── EXIFTOOL — LOCAL METADATA EXTRACTION ────────────────────────────────────
+  # Install: apt install exiftool
+  
+  # Extract all metadata from any file
+  exiftool document.pdf
+  
+  # Extract GPS coordinates from a photo (reveals employee location)
+  exiftool -gpslatitude -gpslongitude -gpsaltitude photo.jpg
+  
+  # Batch process an entire directory and output to CSV
+  exiftool -r -csv /path/to/documents/ > metadata.csv
+  
+  # Extract author names from all PDFs at once
+  exiftool -Author *.pdf
+  
+  # Find internal Windows file paths in Office documents
+  exiftool -Company -Creator -LastModifiedBy -Software document.docx
+  
+  # ─── MAT2 — METADATA VIEWER AND STRIPPER ─────────────────────────────────────
+  pip install mat2
+  mat2 --show document.pdf   # Read all metadata
+  mat2 document.pdf          # Strip metadata (for your own docs before publishing)
+  
+  # ─── BULK METADATA EXTRACTION FROM WAYBACK ARCHIVE ───────────────────────────
+  
+  curl -s "http://web.archive.org/cdx/search/cdx?url=target.com/*.pdf&output=text&fl=original" \\
+    | while read url; do
+        wget -q -O /tmp/temp.pdf "$url"
+        echo "=== $url ===" >> metadata_dump.txt
+        exiftool /tmp/temp.pdf | grep -E "Author|Creator|Last Modified By|Company|Software|Producer" >> metadata_dump.txt
+        rm /tmp/temp.pdf
+      done
+  
+  # ─── EXTRACT GPS FROM EMPLOYEE PHOTOS ───────────────────────────────────────
+  
+  for f in *.jpg; do
+    echo "=== $f ==="
+    exiftool -gpslatitude -gpslongitude "$f" 2>/dev/null
+  done`,
+        },
+      },
+      {
+        heading: "Phase 9: Cloud Infrastructure OSINT",
+        paragraphs: [
+          "Modern organisations live in the cloud, and cloud services introduce a unique OSINT surface. Misconfigured S3 buckets, publicly readable Azure Blob containers, GCP storage buckets with world-readable ACLs, publicly exposed cloud functions — these are incredibly common findings and often catastrophic in terms of data exposure.",
+          "The challenge with cloud OSINT is that cloud resources don't always surface in DNS or Shodan queries. You need to know where to look. S3 bucket names follow predictable patterns based on company name, product name, and environment — enumerating guessed bucket names is a reliable technique that regularly turns up sensitive data.",
+        ],
+        imagePlaceholder: {
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/600px-Amazon_Web_Services_Logo.svg.png",
+          alt: "AWS — misconfigured S3 buckets are among the most commonly discovered critical OSINT findings",
+        },
+        codeBlock: {
+          language: "bash",
+          code: `# ─── S3 BUCKET ENUMERATION ───────────────────────────────────────────────────
+  
+  # lazys3 — enumerate S3 buckets by guessing common name patterns
+  # Install: git clone https://github.com/nahamsec/lazys3
+  ruby lazys3.rb targetcompany
+  
+  # s3scanner — structured scan for open/listable buckets
+  pip install s3scanner
+  s3scanner scan --bucket-file buckets.txt
+  s3scanner dump --bucket targetcompany-backup --dump-dir ./loot
+  
+  # Generate a targeted bucket name wordlist based on company name
+  cat > buckets.txt << 'EOF'
+  target
+  targetcompany
+  target-company
+  target-backup
+  target-prod
+  target-dev
+  target-staging
+  target-logs
+  target-assets
+  target-uploads
+  target-data
+  target-images
+  EOF
+  s3scanner scan --bucket-file buckets.txt --threads 20
+  
+  # ─── CLOUD ENUM — MULTI-CLOUD ENUMERATION ────────────────────────────────────
+  # Checks AWS S3, Azure Blob, and GCP Storage simultaneously
+  # Install: git clone https://github.com/initstring/cloud_enum
+  
+  python3 cloud_enum.py -k targetcompany
+  python3 cloud_enum.py -k targetcompany -k target-company -k targetapp
+  
+  # ─── AWS — CHECK AND DUMP PUBLIC BUCKETS ─────────────────────────────────────
+  
+  # List contents (no credentials required for public buckets)
+  aws s3 ls s3://targetcompany-backup --no-sign-request
+  
+  # Sync everything locally
+  aws s3 sync s3://targetcompany-backup ./loot --no-sign-request
+  
+  # ─── AZURE BLOB STORAGE ──────────────────────────────────────────────────────
+  
+  # BlobHunter — find exposed Azure containers
+  # Install: git clone https://github.com/cyberark/BlobHunter
+  python3 BlobHunter.py
+  
+  # Manual listing of a public container
+  curl -s "https://targetcompany.blob.core.windows.net/public?restype=container&comp=list"
+  
+  # ─── GCP STORAGE ─────────────────────────────────────────────────────────────
+  
+  # Manual check — publicly readable buckets return XML listing
+  curl -s "https://storage.googleapis.com/targetcompany-backup/"
+  
+  # ─── FIND CLOUD REFERENCES VIA SHODAN ────────────────────────────────────────
+  
+  shodan search 'org:"Target Corporation" "s3.amazonaws.com"'
+  shodan search 'hostname:"blob.core.windows.net" ssl.cert.subject.cn:"*.targetcompany*"'`,
+        },
+      },
+      {
+        heading: "Putting It All Together: The Full OSINT Pipeline",
+        paragraphs: [
+          "All of these tools and techniques are worthless without a structured workflow. Let me walk you through how I approach a full OSINT engagement from kickoff to deliverable.",
+          "Step 1 is scoping — understand exactly what you're authorised to research and what's out of scope. Even for open-source intelligence, scope matters. Step 2 is passive domain recon — WHOIS, CT logs, DNS, and Wayback. Step 3 is infrastructure mapping — Shodan, Censys, cloud enum. Step 4 is people intelligence — LinkedIn, breach data, email harvesting. Step 5 is document intelligence — metadata and GitHub secrets. Step 6 is correlation — tying all the data together into a cohesive picture. Step 7 is reporting — producing actionable intelligence, not a data dump.",
+          "The output is always an attack surface map that shows exactly what an adversary would find if they spent a weekend doing OSINT against the target — and what the security team needs to fix.",
+        ],
+      },
+      {
+        heading: "SpiderFoot & Recon-ng — Automated OSINT Collection Frameworks",
+        paragraphs: [
+          "SpiderFoot is the closest thing to a single-tool OSINT solution. It orchestrates dozens of individual modules — DNS, Shodan, HaveIBeenPwned, Wayback, certificate logs, social media, and more — into a single automated collection run. You point it at a domain or IP, set the scan type, and it builds a comprehensive intelligence picture automatically.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── SPIDERFOOT ──────────────────────────────────────────────────────────────
+  pip3 install spiderfoot
+  
+  # Launch the web UI (recommended for interactive use)
+  spiderfoot -l 127.0.0.1:5001
+  # Then browse to http://127.0.0.1:5001
+  
+  # CLI — passive-only scan (zero packets to target)
+  spiderfoot -s target.com -t INTERNET_NAME \\
+    -m sfp_crt,sfp_whois,sfp_shodan,sfp_hibp,sfp_github
+  
+  # Output to CSV for further analysis
+  spiderfoot -s target.com -t INTERNET_NAME -o csv -f results.csv
+  
+  # ─── RECON-NG ─────────────────────────────────────────────────────────────────
+  pip3 install recon-ng
+  recon-ng
+  
+  # Inside the recon-ng shell:
+  # marketplace install all
+  # workspaces create target_engagement
+  # modules load recon/domains-hosts/certificate_transparency
+  # options set SOURCE target.com
+  # run
+  
+  # ─── FULL PASSIVE RECON BASH PIPELINE ────────────────────────────────────────
+  
+  TARGET="target.com"
+  OUTPUT_DIR="./osint_${TARGET}"
+  mkdir -p "$OUTPUT_DIR"/{subdomains,dns,infra,documents}
+  
+  echo "[*] Starting OSINT collection for $TARGET"
+  
+  # 1. Subdomain enum (CT logs + passive sources)
+  subfinder -d "$TARGET" -all -recursive -o "$OUTPUT_DIR/subdomains/subfinder.txt" -silent
+  amass enum -passive -d "$TARGET" -o "$OUTPUT_DIR/subdomains/amass.txt"
+  cat "$OUTPUT_DIR/subdomains/"*.txt | sort -u > "$OUTPUT_DIR/subdomains/all.txt"
+  echo "[+] Subdomains: $(wc -l < "$OUTPUT_DIR/subdomains/all.txt")"
+  
+  # 2. DNS record enumeration
+  dnsx -l "$OUTPUT_DIR/subdomains/all.txt" -a -aaaa -mx -ns -cname -json \\
+    -o "$OUTPUT_DIR/dns/records.json" -silent
+  
+  # 3. Historical URL discovery
+  waybackurls "$TARGET" > "$OUTPUT_DIR/documents/wayback.txt" 2>/dev/null
+  gau "$TARGET" >> "$OUTPUT_DIR/documents/gau.txt" 2>/dev/null
+  echo "[+] Wayback URLs: $(wc -l < "$OUTPUT_DIR/documents/wayback.txt")"
+  
+  # 4. Shodan infrastructure mapping
+  shodan search "hostname:$TARGET" --fields ip_str,port,org,product \\
+    > "$OUTPUT_DIR/infra/shodan.txt" 2>/dev/null
+  
+  # 5. Secret scanning in public GitHub repos
+  trufflehog github --org="$(echo $TARGET | cut -d. -f1)" --only-verified \\
+    > "$OUTPUT_DIR/documents/github_secrets.txt" 2>&1
+  
+  echo "[*] Done. Review results in $OUTPUT_DIR"`,
+        },
+      },
+      {
+        heading: "OPSEC for OSINT Researchers — Don't Get Burned",
+        paragraphs: [
+          "If you're doing OSINT professionally — for a red team, bug bounty, or threat intelligence role — your own operational security matters. Targets with decent security monitoring may notice reconnaissance activity even against public data sources, especially if you're making many API requests from a single IP address.",
+          "Basic OPSEC: use a dedicated VM that you wipe between engagements, route all traffic through a VPN (not your home IP), use separate browser profiles for OSINT work, and never log in to your personal accounts during an engagement. More advanced: use Tor for high-sensitivity lookups, create throwaway accounts for LinkedIn scraping, and avoid querying the same source repeatedly in a short timeframe.",
+          "The most important rule: never let your recon touch the target's infrastructure until you're explicitly authorised and ready for active testing. Passive OSINT means zero packets to the target. The moment you ping a subdomain you found, you've moved into active reconnaissance — different legal and operational considerations apply entirely.",
+        ],
+      },
+      {
+        heading: "Recommended Tool Stack — The Practitioner's Complete Loadout",
+        paragraphs: [
+          "Here's the consolidated tool list I keep installed and updated on every engagement machine. The OSINT tooling landscape changes fast — evaluate new tools regularly and retire ones that stop being maintained.",
+        ],
+        codeBlock: {
+          language: "bash",
+          code: `# ─── FULL OSINT TOOLKIT INSTALL SCRIPT ──────────────────────────────────────
+  # Tested on Kali Linux / ParrotOS / Ubuntu 22.04+
+  
+  # ── Go-based tools (fast, compiled, reliable) ────────────────────────────────
+  go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+  go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
+  go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+  go install -v github.com/projectdiscovery/tlsx/cmd/tlsx@latest
+  go install -v github.com/tomnomnom/waybackurls@latest
+  go install -v github.com/lc/gau/v2/cmd/gau@latest
+  go install -v github.com/owasp-amass/amass/v4/...@master
+  go install -v github.com/Josue87/EmailFinder@latest
+  go install github.com/trufflesecurity/trufflehog/v3@latest
+  go install github.com/sundowndev/phoneinfoga/v2/cmd/phoneinfoga@latest
+  
+  # ── Python tools ─────────────────────────────────────────────────────────────
+  pip3 install shodan censys theHarvester recon-ng spiderfoot \\
+               sherlock-project maigret h8mail s3scanner
+  
+  # ── System packages ───────────────────────────────────────────────────────────
+  sudo apt install -y exiftool dnsrecon fierce whois smtp-user-enum \\
+                      nmap masscan dnsutils curl jq git python3-pip golang
+  
+  # ── Ruby tools ────────────────────────────────────────────────────────────────
+  gem install wpscan
+  
+  # ── Docker images ─────────────────────────────────────────────────────────────
+  docker pull trufflesecurity/trufflehog
+  
+  # ─── VERIFY ALL TOOLS ARE WORKING ────────────────────────────────────────────
+  
+  echo "=== OSINT Toolkit Health Check ==="
+  TOOLS=(subfinder dnsx httpx tlsx waybackurls gau amass shodan theHarvester exiftool dnsrecon whois trufflehog phoneinfoga)
+  PASS=0; FAIL=0
+  
+  for tool in "\${TOOLS[@]}"; do
+    if command -v "$tool" &>/dev/null; then
+      echo "  ✓ $tool"
+      ((PASS++))
+    else
+      echo "  ✗ $tool [MISSING]"
+      ((FAIL++))
+    fi
+  done
+  
+  echo ""
+  echo "Result: $PASS installed, $FAIL missing"`,
+        },
+      },
+      {
+        heading: "Legal & Ethical Boundaries — Non-Negotiable",
+        paragraphs: [
+          "OSINT exists in a legal grey zone that depends entirely on jurisdiction, intent, and how you use the information you gather. Collecting publicly available information is generally legal. But acting on that information in certain ways — accessing systems without authorisation, stalking individuals, facilitating fraud — is absolutely not.",
+          "If you're doing security work: always have written authorisation for the target organisation before you start. Even passive OSINT can create legal exposure if you're building profiles to facilitate attacks on systems you're not authorised to test. For bug bounty work, read the programme's scope carefully — out-of-scope OSINT can get you banned from the programme or worse.",
+          "If you're doing threat intelligence or journalistic OSINT: understand the laws in your jurisdiction around data protection (GDPR in Europe is strict), surveillance, and privacy. The Computer Fraud and Abuse Act in the US, the Computer Misuse Act in the UK, and their equivalents elsewhere have all been used against security researchers who crossed lines they thought were safe.",
+          "My personal rule: if you wouldn't be comfortable showing your full methodology to the target's legal team, don't do it. OSINT is a powerful discipline. Use it responsibly, with explicit authorisation, and with a clear understanding of where the legal lines are in your jurisdiction.",
+        ],
+      },
+      {
+        heading: "Further Reading & Community Resources",
+        paragraphs: [
+          "The OSINT landscape is vast and evolves constantly. Here are the resources I return to regularly and recommend unreservedly:",
+          "OSINT Framework at osintframework.com — the most comprehensive directory of OSINT tools and resources, categorised by target type. Bellingcat's Online Investigation Toolkit — excellent for investigative journalism-style OSINT with a human intelligence focus. Michael Bazzell's OSINT Techniques book and IntelTechniques podcast — the gold standard reference for personal OSINT and digital privacy research. TCM Security's Practical OSINT course — excellent hands-on training with real scenarios and lab environments. The SANS FOR578 Advanced Cyber Threat Intelligence course for professional threat intelligence practitioners.",
+          "Practice on HackTheBox, TryHackMe, and particularly TraceLabs OSINT CTF events — TraceLabs runs CTFs where participants use OSINT to help locate missing persons, which is about as meaningful a real-world application as you can get. The best OSINT researchers are perpetual learners. The techniques are always evolving because the target landscape is always evolving. Stay sharp.",
+        ],
+      },
+    ],
   },
   {
     id: "htb-offshore",
