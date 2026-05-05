@@ -15919,7 +15919,7 @@ const writeups = [
   # ─── FULL PASSIVE RECON BASH PIPELINE ────────────────────────────────────────
   
   TARGET="target.com"
-  OUTPUT_DIR="./osint_${TARGET}"
+  OUTPUT_DIR="./osint_\${TARGET}"
   mkdir -p "$OUTPUT_DIR"/{subdomains,dns,infra,documents}
   
   echo "[*] Starting OSINT collection for $TARGET"
