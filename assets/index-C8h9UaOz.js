@@ -14165,15 +14165,14 @@ const writeups = [
     sections: [
       {
         heading: "Introduction: Why Your Perimeter Is Already Gone",
-        paragraphs: [
-          "Let's be honest — the traditional idea of a 'perimeter' is dead. Five years ago, a security team could draw a box around their corporate network, monitor what crossed the boundary, and call it a day. Today, that same organisation might have developers spinning up AWS Lambda functions at midnight, a marketing team using five different SaaS tools, and three acquisitions running on completely separate infrastructure stacks that nobody fully documented. The attack surface has exploded, and most security teams are still trying to defend with yesterday's mindset.",
-          "Attack Surface Management (ASM) and Vulnerability Management (VM) are two disciplines that have evolved rapidly to address this reality. They're often lumped together in vendor marketing, but they're genuinely different — and understanding where one ends and the other begins is critical if you want to build a program that actually works rather than just looks good in a quarterly report.",
-          "This writeup is a practitioner's guide. I'm going to cover the theory where it matters, but mostly I want to walk through real workflows — the kind that show up in actual red team engagements and internal security programs. You'll see real tool outputs, real commands, and the messy thinking that happens when you're trying to figure out what your organisation actually looks like from an attacker's perspective.",
-        ],
+        paragraphs: [],
         imagePlaceholder: {
           src: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=1100&auto=format&fit=crop&q=80",
         },
         paragraphs: [
+          "Let's be honest — the traditional idea of a 'perimeter' is dead. Five years ago, a security team could draw a box around their corporate network, monitor what crossed the boundary, and call it a day. Today, that same organisation might have developers spinning up AWS Lambda functions at midnight, a marketing team using five different SaaS tools, and three acquisitions running on completely separate infrastructure stacks that nobody fully documented. The attack surface has exploded, and most security teams are still trying to defend with yesterday's mindset.",
+          "Attack Surface Management (ASM) and Vulnerability Management (VM) are two disciplines that have evolved rapidly to address this reality. They're often lumped together in vendor marketing, but they're genuinely different — and understanding where one ends and the other begins is critical if you want to build a program that actually works rather than just looks good in a quarterly report.",
+          "This writeup is a practitioner's guide. I'm going to cover the theory where it matters, but mostly I want to walk through real workflows — the kind that show up in actual red team engagements and internal security programs. You'll see real tool outputs, real commands, and the messy thinking that happens when you're trying to figure out what your organisation actually looks like from an attacker's perspective.",
           "Modern attack surfaces span cloud, on-prem, SaaS, and shadow IT — far beyond what traditional perimeter models anticipated."
           ],
       },
@@ -14519,8 +14518,8 @@ const writeups = [
           "Here's the uncomfortable truth that most VM vendors won't tell you: the average enterprise has tens of thousands of open vulnerabilities at any given time. You will never fix all of them. The question isn't 'how do we fix everything?' — it's 'how do we fix the things that matter, fast enough to make a difference?' That reframe is the most important mental shift in modern VM.",
         ],
         imagePlaceholder: {
-          src: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=1100&auto=format&fit=crop&q=80",
-          alt: "Circular lifecycle diagram representing vulnerability management stages",
+          src: "https://www.kuppingercole.com/pics/3-vulnerability-management-lifecycle.png",
+          alt: "vulnerability management stages",
         },
       },
       {
@@ -14998,7 +14997,7 @@ const writeups = [
           "An integrated ASM + VM pipeline transforms point-in-time security assessments into a continuously operating risk reduction engine.",
         ],
         imagePlaceholder: {
-          src: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1100&auto=format&fit=crop&q=80",           
+          src: "https://info.janusassociates.com/hubfs/AdobeStock_526097152.jpeg",           
           alt: "Security operations center with multiple monitors showing network data",
         },
       },
