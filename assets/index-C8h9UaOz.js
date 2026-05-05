@@ -13629,10 +13629,8 @@ const writeups = [
   
   # Cross-reference discovered service versions against known exploits
   searchsploit apache 2.4.49
-  searchsploit citrix netscaler 13.0`
-
-            
-            `# Web application fingerprinting
+  searchsploit citrix netscaler 13.0`,
+          code: `# Web application fingerprinting
   whatweb -a 3 https://targetcorp.com | tee whatweb_main.txt
   
   # Directory and endpoint discovery with feroxbuster
