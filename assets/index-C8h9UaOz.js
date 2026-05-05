@@ -13614,6 +13614,10 @@ const writeups = [
         ],
         codeBlock: {
           language: "bash",
+          code: 
+        },
+        codeBlock: {
+          language: "bash",
           code: `# Phase 1: Host discovery across the /24
   nmap -sn 192.0.2.0/24 -oG hosts_alive.txt
   grep "Up" hosts_alive.txt | awk '{print $2}' > live_hosts.txt
@@ -13630,10 +13634,7 @@ const writeups = [
   # Cross-reference discovered service versions against known exploits
   searchsploit apache 2.4.49
   searchsploit citrix netscaler 13.0`,
-        },
-        codeBlock: {
-          language: "bash",
-          code: `# Web application fingerprinting
+            `# Web application fingerprinting
   whatweb -a 3 https://targetcorp.com | tee whatweb_main.txt
   
   # Directory and endpoint discovery with feroxbuster
