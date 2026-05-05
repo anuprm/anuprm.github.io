@@ -13629,8 +13629,11 @@ const writeups = [
   
   # Cross-reference discovered service versions against known exploits
   searchsploit apache 2.4.49
-  searchsploit citrix netscaler 13.0`,
-          code: `# Web application fingerprinting
+  searchsploit citrix netscaler 13.0
+  
+  ===================================
+  
+  # Web application fingerprinting
   whatweb -a 3 https://targetcorp.com | tee whatweb_main.txt
   
   # Directory and endpoint discovery with feroxbuster
@@ -13688,7 +13691,7 @@ const writeups = [
         ],
         imagePlaceholder: {
           caption: "Fig 2: TruffleHog v3 scanning a GitHub org — verified secrets flagged with a green checkmark, each one traced to the exact commit hash, file path, and line number",
-          src: "https://camo.githubusercontent.com/89e2214944f8282f90c4cca2a5a642a83e7fbdd97c818cf788a745a774413370/68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f74727566666c652d64656d6f732f6e6f6e2d696e7465726163746976652e737667",
+          src: "https://redbotsecurity.com/wp-content/uploads/2024/03/open-source-intelligence-OSINT-Penetration-Testing.jpg",
         },
       },
       {
