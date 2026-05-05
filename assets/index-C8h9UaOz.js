@@ -13604,9 +13604,13 @@ const writeups = [
       {
         heading: "3. Active Reconnaissance — Port Scanning & Service Enumeration",
         
+        paragraphs: [ ],
+        
         paragraphs: [
           "With the passive picture painted, we move into active recon. This is where we start generating traffic that will appear in the client's logs. We've notified the SOC team that testing has begun (per the RoE), so any alerts they generate are useful feedback, not a problem.",
           "We run nmap in stages. The initial sweep is fast and wide — just finding live hosts and open ports. The second pass is deep and specific — running default scripts and version detection against every open port. We keep the timing conservative (T3) because we don't want to accidentally DoS anything and because slower scans produce more accurate results against rate-limited services.",
+          "The service scan results are telling. Port 8443 on 192.0.2.47 returns a Citrix ADC (NetScaler) management interface. Version detection confirms it's running 13.0 build 67.39 — a version vulnerable to CVE-2023-3519, the unauthenticated RCE that wrecked a lot of organizations in mid-2023. We note this but don't exploit it yet; we want to exhaust lower-noise options first.",
+          "More interestingly, 192.0.2.82 is running Apache Tomcat 9.0.71 on port 8080 with the manager interface exposed at /manager/html. Default credentials are worth a quick check before anything fancy. We'll come back to this during the exploitation phase.",
         ],
         codeBlock: {
           language: "bash",
@@ -13627,10 +13631,6 @@ const writeups = [
   searchsploit apache 2.4.49
   searchsploit citrix netscaler 13.0`,
         },
-        paragraphs: [
-          "The service scan results are telling. Port 8443 on 192.0.2.47 returns a Citrix ADC (NetScaler) management interface. Version detection confirms it's running 13.0 build 67.39 — a version vulnerable to CVE-2023-3519, the unauthenticated RCE that wrecked a lot of organizations in mid-2023. We note this but don't exploit it yet; we want to exhaust lower-noise options first.",
-          "More interestingly, 192.0.2.82 is running Apache Tomcat 9.0.71 on port 8080 with the manager interface exposed at /manager/html. Default credentials are worth a quick check before anything fancy. We'll come back to this during the exploitation phase.",
-        ],
         codeBlock: {
           language: "bash",
           code: `# Web application fingerprinting
