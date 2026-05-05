@@ -15026,20 +15026,20 @@ const writeups = [
   {
     id: "osint-deep-dive-2025",
     category: "OSINT",
-    categoryColor: "oklch(0.72 0.17 160)",
-    categoryBg: "oklch(0.72 0.17 160 / 0.1)",
-    categoryBorder: "oklch(0.72 0.17 160 / 0.3)",
+    categoryColor: "oklch(0.75 0.22 22)",
+    categoryBg: "oklch(0.75 0.22 22 / 0.1)",
+    categoryBorder: "oklch(0.75 0.22 22 / 0.3)",
     title: "OSINT Deep Dive: From Zero to Full Target Profile — A Practitioner's Field Manual",
     excerpt:
       "A practitioner-level walkthrough of Open Source Intelligence gathering — covering recon methodology, passive footprinting, social media profiling, infrastructure mapping, Google/GitHub dorks, and real-world toolchains. Whether you're doing red teaming, bug bounty recon, or threat intelligence, this is the playbook.",
-    date: "May 2025",
+    date: "April 2026",
     readTime: "35 min read",
     sections: [
       {
         heading: "What Is OSINT and Why Does It Still Dominate Recon?",
         paragraphs: [
           "Open Source Intelligence — OSINT — is the art and science of collecting, correlating, and analysing information that is freely available to the public. No exploits. No zero-days. No illegal access. Just the internet, a browser, and the right methodology. Yet time and again, OSINT proves to be the most underestimated phase of any offensive security engagement.",
-          "I've been doing red team engagements for years, and I can count on one hand the number of times we needed a sophisticated exploit to get initial access. The overwhelming majority of the time, the way in was through a leaked credential on a paste site, an employee's LinkedIn profile revealing their internal tools, or a misconfigured S3 bucket that a GitHub commit pointed to. OSINT gave us all of that — before we touched a single target system.",
+          "I've been doing PT engagements for years, and I can count on one hand the number of times we needed a sophisticated exploit to get initial access. The overwhelming majority of the time, the way in was through a leaked credential on a paste site, an employee's LinkedIn profile revealing their internal tools, or a misconfigured S3 bucket that a GitHub commit pointed to. OSINT gave us all of that — before we touched a single target system.",
           "This write-up is my attempt to consolidate everything I know about OSINT into one structured field manual. We're going to go through reconnaissance methodology from first principles, then get into the actual tools, commands, dorks, and workflows I use on real engagements. No fluff, no surface-level tool lists. If you're looking for a comprehensive, practical reference — this is it.",
         ],
       },
@@ -15051,7 +15051,7 @@ const writeups = [
           "Before you run a single command, you should be asking: What am I trying to find out? Who is my target? What do I already know? What assumptions am I making? Intelligence analysts call this the Intelligence Cycle: Direction → Collection → Processing → Analysis → Dissemination. Apply it to every engagement, even bug bounty recon.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Intelligence_cycle_security.jpg/800px-Intelligence_cycle_security.jpg",
+          src: "https://courses.ems.psu.edu/geog571/sites/geog571/files/images/L02/mirror.png",
           alt: "The Intelligence Cycle — Direction, Collection, Processing, Analysis, Dissemination",
         },
       },
@@ -15097,7 +15097,7 @@ const writeups = [
           "The best part? CT logs capture wildcard certs, SAN entries, and even internal-looking subdomains that accidentally got public certificates. I've found staging environments, internal APIs, and developer tools this way that were never meant to be public-facing.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/TLS_1.3_Handshake.svg/800px-TLS_1.3_Handshake.svg.png",
+          src: "https://www.a10networks.com/wp-content/uploads/differences-between-tls-1.2-and-tls-1.3-full-handshake.png",
           alt: "TLS 1.3 Handshake — every certificate issued during this process gets logged publicly in CT logs",
         },
         codeBlock: {
@@ -15134,7 +15134,7 @@ const writeups = [
           "Zone transfers are mostly dead — but you'd be surprised how often admins still leave them misconfigured, so always try. Beyond that, passive DNS databases like CIRCL, PassiveTotal, and Shodan's DNS feature give you a historical view of what records looked like in the past. That historical data is invaluable: a company's A record might point to a cloud provider now, but six months ago it pointed to their old data center's IP — and that IP might still be running the same services.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Example_of_an_iterative_DNS_resolver.svg/800px-Example_of_an_iterative_DNS_resolver.svg.png",
+          src: "https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F96fbf5fc-bf5d-4047-b058-f48f6f3b3a30_1600x1432.png",
           alt: "Iterative DNS resolution flow — understanding the chain from root to authoritative nameserver",
         },
         codeBlock: {
@@ -15178,7 +15178,7 @@ const writeups = [
           "One important note: Google rate-limits and sometimes CAPTCHAs aggressive queries. Use a VPN, rotate queries, or use tools like pagodo that automate GHDB dorks while being rate-limit aware. Bing and DuckDuckGo have similar operators and are often less aggressive with rate limiting.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/800px-Google_2015_logo.svg.png",
+          src: "https://www.safeaeon.com/assets/img/blogImages/google-dorking-tricks_blogpost-1.svg",
           alt: "Google — the most powerful passive OSINT engine when wielded with advanced search operators",
         },
       },
@@ -15311,7 +15311,7 @@ const writeups = [
           "Beyond secrets, GitHub code search lets you find how a target builds their software, what internal tools they use, what CI/CD pipelines look like, and sometimes even architecture diagrams in READMEs. It's a goldmine of attack surface intelligence.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/600px-GitHub_Invertocat_Logo.svg.png",
+          src: "https://miro.medium.com/v2/da:true/resize:fit:1200/0*wZ7uJ9ewovrF5gKo",
           alt: "GitHub — one of the richest unintentional sources of leaked secrets and internal infrastructure details",
         },
       },
@@ -15398,7 +15398,7 @@ const writeups = [
           "The key skill in people OSINT is pivoting — using one piece of information to find the next. You find a name on LinkedIn, search that email format on HaveIBeenPwned, find a credential leak, pivot to their personal email, find their home address in a data broker record. Each pivot expands the intelligence picture.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/LinkedIn_icon.svg/400px-LinkedIn_icon.svg.png",
+          src: "https://www.molfar.institute/wp-content/uploads/2025/05/ezgif-4366227956bc0e93.webp",
           alt: "LinkedIn — the most information-rich public source for corporate people intelligence and org mapping",
         },
       },
@@ -15512,7 +15512,7 @@ const writeups = [
           "Shodan, Censys, and FOFA are your primary weapons here. These are passive scanning services that continuously scan the entire internet and index the results. You query their databases, not the target's systems. From these databases alone, you can find exposed databases, industrial control systems, misconfigured cloud storage, default credential panels, and much more.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Computer_network_diagram.svg/800px-Computer_network_diagram.svg.png",
+          src: "https://www.cyberquizzer.com/_next/image?url=%2Fimages%2Fblog%2Fosint-network-infrastructure-analysis1200x630.jpg&w=1200&q=75",
           alt: "Network infrastructure diagram — mapping the exposed internet-facing attack surface of an organisation",
         },
       },
@@ -15640,7 +15640,7 @@ const writeups = [
           "I once recovered a complete internal employee directory from a company's Wayback Machine snapshots from 2019. The page had been taken down, but the archive preserved every name, title, and extension. That directory became the foundation for the entire people-based recon phase of the engagement.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Internet_Archive_logo_and_wordmark.svg/600px-Internet_Archive_logo_and_wordmark.svg.png",
+          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Wayback_Machine_logo_2010.svg/1280px-Wayback_Machine_logo_2010.svg.png",
           alt: "Internet Archive — the Wayback Machine preserves website snapshots indefinitely, even after pages are taken down",
         },
         codeBlock: {
@@ -15696,7 +15696,7 @@ const writeups = [
           "HaveIBeenPwned is the clean, ethical entry point and is fully sanctioned for security research. For authorised red team work, additional sources like DeHashed, IntelX, and Snusbase aggregate breach data and make it searchable by email, username, password hash, IP, or domain. The intelligence value of knowing which employees have appeared in breaches is enormous for assessing real organisational risk.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Padlock-silver-green.svg/400px-Padlock-silver-green.svg.png",
+          src: "https://www.breachsense.com/images/JSON.png",
           alt: "Credential security — breach data reveals whether an organisation's employees are reusing compromised passwords",
         },
         codeBlock: {
@@ -15746,7 +15746,7 @@ const writeups = [
           "A PDF report published on a company's website might contain the name of the contractor who created it, their Windows username, the internal file path (revealing folder naming conventions and possibly server names), and the software version — which might be outdated and vulnerable. This is exactly the kind of intelligence that sharpens your social engineering and exploitation strategy.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/400px-PDF_file_icon.svg.png",
+          src: "https://cdn.prod.website-files.com/628b7f5be8fdd0031d2ebcb0/68bb323a7111f0f6f58050a0_WhatYouDontSee.jpg",
           alt: "PDF files — commonly contain hidden metadata including author names, internal paths, and software versions",
         },
         codeBlock: {
@@ -15808,7 +15808,7 @@ const writeups = [
           "The challenge with cloud OSINT is that cloud resources don't always surface in DNS or Shodan queries. You need to know where to look. S3 bucket names follow predictable patterns based on company name, product name, and environment — enumerating guessed bucket names is a reliable technique that regularly turns up sensitive data.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/600px-Amazon_Web_Services_Logo.svg.png",
+          src: "https://miro.medium.com/v2/resize:fit:1400/format:webp/1*qK-oqBvNz54oAiQ7tge3Jg.png",
           alt: "AWS — misconfigured S3 buckets are among the most commonly discovered critical OSINT findings",
         },
         codeBlock: {
