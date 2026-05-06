@@ -17351,7 +17351,7 @@ const writeups = [
   # ─── VERIFY INSTALLATIONS ────────────────────────────────────────────────────
   echo "=== Toolkit Health Check ==="
   TOOLS=(trivy kubescape tfsec checkov semgrep actionlint trufflehog gitleaks terrascan)
-  for tool in ${TOOLS[@]}; do
+  for tool in \${TOOLS[@]}; do
     command -v $tool &>/dev/null && echo "  ✓ $tool" || echo "  ✗ $tool"
   done`,
         },
