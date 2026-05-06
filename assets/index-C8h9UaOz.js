@@ -12585,7 +12585,7 @@ ${message}`
                       id: "contact-name",
                       type: "text",
                       required: true,
-                      placeholder: "Anup Maurya",
+                      placeholder: "Your Name",
                       value: form.name,
                       onChange: (e) => setForm((p) => ({ ...p, name: e.target.value })),
                       style: inputStyle,
@@ -12609,7 +12609,7 @@ ${message}`
                       id: "contact-email",
                       type: "email",
                       required: true,
-                      placeholder: "Anup@gmail.com",
+                      placeholder: "Your Email ID",
                       value: form.email,
                       onChange: (e) => setForm((p) => ({ ...p, email: e.target.value })),
                       style: inputStyle,
@@ -16034,7 +16034,7 @@ const writeups = [
     ],
   },
   {
-    id: "cloud-ai-modern-infra-security-2025",
+    id: "cloud-ai-modern-infra-security",
     category: "CLOUD SECURITY",
     categoryColor: "oklch(0.65 0.20 250)",
     categoryBg: "oklch(0.65 0.20 250 / 0.1)",
@@ -16042,8 +16042,8 @@ const writeups = [
     title: "AI, Cloud & Modern Infrastructure Security: The Attacker's Playbook and the Defender's Response",
     excerpt:
       "A deep-dive into securing the modern stack — cloud misconfiguration exploitation, container and Kubernetes attack chains, CI/CD pipeline poisoning, AI/LLM-specific threats like prompt injection and model theft, Infrastructure-as-Code security, and Zero Trust architecture. Includes real attack techniques, tooling, and hardening commands across AWS, GCP, Azure, Docker, and Kubernetes.",
-    date: "May 2025",
-    readTime: "40 min read",
+    date: "March 2026",
+    readTime: "30 min read",
     sections: [
       {
         heading: "Why the Modern Stack Is a Security Nightmare",
@@ -16062,7 +16062,7 @@ const writeups = [
           "Understanding how attackers enumerate and exploit cloud environments is the starting point for building meaningful defenses.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg",
+          src: "https://editor.analyticsvidhya.com/uploads/48060amazon-s3_preview.png",
           alt: "AWS — the dominant cloud platform and primary target of cloud misconfiguration attacks",
         },
       },
