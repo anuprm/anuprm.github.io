@@ -15097,7 +15097,7 @@ const writeups = [
           "The best part? CT logs capture wildcard certs, SAN entries, and even internal-looking subdomains that accidentally got public certificates. I've found staging environments, internal APIs, and developer tools this way that were never meant to be public-facing.",
         ],
         imagePlaceholder: {
-          src: "https://www.a10networks.com/wp-content/uploads/differences-between-tls-1.2-and-tls-1.3-full-handshake.png",
+          src: "https://www.manageengine.com/key-manager/information-center/images/tls-handshake.png",
           alt: "TLS 1.3 Handshake — every certificate issued during this process gets logged publicly in CT logs",
         },
         codeBlock: {
@@ -15640,7 +15640,7 @@ const writeups = [
           "I once recovered a complete internal employee directory from a company's Wayback Machine snapshots from 2019. The page had been taken down, but the archive preserved every name, title, and extension. That directory became the foundation for the entire people-based recon phase of the engagement.",
         ],
         imagePlaceholder: {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Wayback_Machine_logo_2010.svg/1280px-Wayback_Machine_logo_2010.svg.png",
+          src: "https://blog.archive.org/wp-content/uploads/2024/02/wayback_logo-scaled.jpg",
           alt: "Internet Archive — the Wayback Machine preserves website snapshots indefinitely, even after pages are taken down",
         },
         codeBlock: {
@@ -16224,7 +16224,7 @@ const writeups = [
           "In Azure, the primary privilege escalation vector is through Azure Active Directory (now Entra ID) — specifically through app registrations with broad Microsoft Graph API permissions, Managed Identity abuse, and Azure Resource Manager role assignments. The introduction of Workload Identity Federation has improved things, but legacy service principal secrets with `Contributor` roles on subscriptions remain a common finding.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/googlecloud/googlecloud-original.svg",
+          src: "https://wcollins.io/posts/2020/alkira-multicloud-networking/intro.png",
           alt: "Google Cloud Platform — GCP service account misconfigurations are a leading cause of cloud breaches",
         },
         codeBlock: {
@@ -16304,7 +16304,7 @@ const writeups = [
           "The most common container escape vectors are: privileged containers, dangerous capability grants (CAP_SYS_ADMIN is almost always exploitable), host path mounts to sensitive directories, exposed Docker sockets mounted inside containers, and kernel exploits enabled by insufficient seccomp profiles.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain-wordmark.svg",
+          src: "https://ercanermis.com/wp-content/uploads/1200x430docker.jpg",
           alt: "Docker — container isolation is powerful but misconfiguration leads to full host escapes",
         },
       },
@@ -16398,7 +16398,7 @@ const writeups = [
           "The Kubernetes attack matrix — popularised by Microsoft's research team — maps attacker tactics across the MITRE ATT&CK framework adapted for Kubernetes: Initial Access → Execution → Persistence → Privilege Escalation → Defense Evasion → Credential Access → Discovery → Lateral Movement → Impact. We'll walk through each phase with concrete techniques.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-plain-wordmark.svg",
+          src: "https://a.storyblok.com/f/153547/1080x608/9c13218ee1/kubernetes_security_blog.png",
           alt: "Kubernetes — the dominant container orchestration platform with a complex, multi-layered attack surface",
         },
       },
@@ -16595,7 +16595,7 @@ const writeups = [
           "The attack surface of a modern CI/CD pipeline includes: the source control system (GitHub, GitLab, Bitbucket), the pipeline runner (Jenkins, GitHub Actions, GitLab CI, CircleCI), the artifact registry (Docker Hub, ECR, Artifactory), the secret management system (Vault, AWS Secrets Manager, GitHub Secrets), and the deployment target (Kubernetes, ECS, Lambda).",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jenkins/jenkins-original.svg",
+          src: "https://spectralops.io/wp-content/uploads/2022/11/image1.png",
           alt: "Jenkins — one of the most widely deployed CI/CD platforms and a high-value target for supply chain attacks",
         },
       },
@@ -16710,7 +16710,7 @@ const writeups = [
           "IaC security is about catching misconfigurations before they reach production — shifting security left into the development and review process rather than finding issues after infrastructure is deployed. The tooling ecosystem for IaC scanning has matured significantly and there's no excuse for not running these checks in your pipeline.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/terraform/terraform-original.svg",
+          src: "https://scand.com/wp-content/uploads/2022/11/body_3_Infrastructure-as-Code-tools1.jpg",
           alt: "Terraform — IaC misconfigurations can provision thousands of insecure resources at scale",
         },
         codeBlock: {
@@ -16811,7 +16811,7 @@ const writeups = [
           "OWASP released the LLM Top 10 to categorize these risks, and the list reads like a map of everything that's currently being exploited in the wild. Let's go through the most critical ones with real examples.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg",
+          src: "https://cdn.prod.website-files.com/651c34ac817aad4a2e62ec1b/65b114257ac9c3591fe0028e_H8ZLrKBW5jhv4pb0Eeuy9jogbapNvxEkLvYG6FyIW4YkPoj5MUQJxnwRYO18F5Mdx3C5gKhpWtKt63Yq0Tzita9SCOfaSOFxKOzox2mQAp2A6BtttFshEyHzU_QaZuHExZH-BKVb7b7FwgqlgvT6qIM.png",
           alt: "Python — the primary language for AI/ML security research, model red-teaming, and LLM attack tooling",
         },
       },
@@ -17048,7 +17048,7 @@ const writeups = [
           "The most important concept in Zero Trust is microsegmentation — breaking down the flat networks that attackers love to move laterally through into small, isolated zones where every connection is explicitly authorized. Combined with strong identity and device posture requirements, microsegmentation dramatically reduces the blast radius of any single compromise.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ansible/ansible-original.svg",
+          src: "https://www.brickworkindia.com/AdminFiles/What-is-Zero-Trust-Architecture-_1.jpg",
           alt: "Ansible — automation is central to Zero Trust implementation at scale across modern infrastructure",
         },
         codeBlock: {
@@ -17184,7 +17184,7 @@ const writeups = [
           "The challenge is the volume. A busy AWS account generates millions of CloudTrail events per day. A Kubernetes cluster with dozens of nodes generates gigabytes of audit logs. You need to know what 'normal' looks like so you can detect deviations — and that requires both good tooling and good detection logic.",
         ],
         imagePlaceholder: {
-          src: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prometheus/prometheus-original.svg",
+          src: "https://www.cncf.io/wp-content/uploads/2022/10/image2-38.png",
           alt: "Prometheus — the backbone of cloud-native monitoring, extended with security-focused alerting rules",
         },
         codeBlock: {
