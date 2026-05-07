@@ -15097,7 +15097,7 @@ const writeups = [
           "The best part? CT logs capture wildcard certs, SAN entries, and even internal-looking subdomains that accidentally got public certificates. I've found staging environments, internal APIs, and developer tools this way that were never meant to be public-facing.",
         ],
         imagePlaceholder: {
-          src: "https://www.manageengine.com/key-manager/information-center/images/tls-handshake.png",
+          src: "assets/images/image.png",
           alt: "TLS 1.3 Handshake — every certificate issued during this process gets logged publicly in CT logs",
         },
         codeBlock: {
