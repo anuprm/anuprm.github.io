@@ -17619,7 +17619,7 @@ function Writeups() {
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "a",
       {
-        href: "https://anuprm.github.io/CyberBlog/",
+        href: "https://anuprm.github.io/CyberBlogs/",
         target: "_blank",
         rel: "noopener noreferrer",
         className: "group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 rounded-xl p-5 sm:p-6 mt-10 sm:mt-12 transition-all duration-300 cursor-pointer no-underline",
